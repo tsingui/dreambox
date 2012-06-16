@@ -32,7 +32,7 @@ define Host/Compile
 	$(call cc,mkcasfw)
 	$(call cc,mkfwimage,-lz)
 	$(call cc,mkfwimage2,-lz)
-	$(call cc,imagetag)
+	$(call cc,imagetag imagetag_cmdline)
 	$(call cc,add_header)
 	$(call cc,makeamitbin)
 	$(call cc,encode_crc)
