@@ -34,7 +34,7 @@ endef
 define Image/Build/CFE
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
+		--output $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
 		--info1 "-$(call Image/LimitName16,$(4))" --info2 $(1) \
@@ -44,7 +44,7 @@ endef
 define Image/Build/CFEFIXUP
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--output $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(5)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(4) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
 		--info1 "+$(call Image/LimitName16,$(3))" --info2 $(1) \
@@ -54,7 +54,7 @@ endef
 define Image/Build/CFEHW553
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--output $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(5)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --tag-version 7 \
 		--block-size 0x20000 --image-offset $(4)
@@ -63,7 +63,7 @@ endef
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--output $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(5)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --tag-version 8 \
 		--signature2 IMAGE --block-size 0x20000 \
@@ -73,33 +73,33 @@ endef
 define Image/Build/RG100A
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--output $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(5)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --block-size 0x20000 \
 		--image-offset $(4) --info1 "-$(call Image/LimitName16,$(5))" --info2 $(1)
 endef
 
 define Image/Build/RedBoot
-	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(1)-vmlinux.elf
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
-	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(1)-vmlinux.lzma bs=65536 conv=sync
-	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(1)-vmlinux.gz bs=65536 conv=sync
+	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(1)-vmlinux.lzma bs=65536 conv=sync
+	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(1)-vmlinux.gz bs=65536 conv=sync
 endef
 
 define Image/Build/SPW303V
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
+		--output $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe.bin.tmp \
 		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
 		$(6) $(7) $(8) $(9)
 	# Fix up header
-	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
-		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin
-	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin \
-		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-factory.bin
-	rm -f $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp
+	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe.bin.tmp \
+		-o $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe-sysupgrade.bin
+	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe-sysupgrade.bin \
+		-o $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe-factory.bin
+	rm -f $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(4)-$(1)-cfe.bin.tmp
 endef
 
 define Image/Build/CFEOLD
@@ -107,7 +107,7 @@ define Image/Build/CFEOLD
 		-b $(2) -c $(3)			\
 		-k $(KDIR)/vmlinux.lzma.cfe	\
 		-r $(KDIR)/root.$(1)		\
-		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin
+		-o $(BIN_DIR)/$(IMAGE_TEST_VERSION)-DreamBox-$(2)-$(1)-cfe.bin
 endef
 
 define Build/Clean
@@ -147,7 +147,7 @@ define Image/Build
 	# Various routers
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96345GW2-generic)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96348GW2-bc221,,--layoutver 5)
-	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-rev,OpenWRT-$(REVISION))
+	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-rev,$(IMAGE_TEST_VERSION)-DreamBox-$(REVISION))
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-generic,,)
 	$(call Image/Build/CFE,$(1),96348R,6348,96348R-generic,,)
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-bc221,,--layoutver 5)
@@ -184,7 +184,7 @@ define Image/Build
 	# Tecom GW6200
 	$(call Image/Build/CFEFIXUP,$(1),96348GW,GW6200,6348,GW6200,$(shell printf '\x99'))
 	# Neufbox4
-	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
+	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,$(IMAGE_TEST_VERSION)-DreamBox-$(REVISION))
 	# Comtrend 536, 5621
 	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,CT536_CT5621,6348,CT536_CT5621)
 	# Davolink DV201AMR
@@ -213,7 +213,7 @@ define Image/Build
 
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404-cfe)
-	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404,OpenWRT-$(REVISION))
+	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404,$(IMAGE_TEST_VERSION)-DreamBox-$(REVISION))
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
