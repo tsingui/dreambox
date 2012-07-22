@@ -43,7 +43,7 @@
 #define HG255D_GPIO_LED_VOICE		5
 
 
-#define HG255D_BUTTONS_POLL_INTERVAL	20
+#define HG255D_BUTTONS_POLL_INTERVAL	100
 #define SZ_128K				0x020000
 #define SZ_1M				0x100000
 #define BLOCK_SZ_128K			SZ_128K
@@ -219,24 +219,23 @@ static struct gpio_button hg255d_buttons[] __initdata = {
 		.code		= BTN_0,
 		.gpio		= HG255D_GPIO_BUTTON_RESET,
 		.active_low	= 1,
-		.threshold      = 3,
-//		.debounce_interval = 100,
+		.threshold      = HG255D_BUTTONS_POLL_INTERVAL,
 	}, {
 		.desc		= "wlan",
 		.type		= EV_KEY,
 		.code		= BTN_1,
 		.gpio		= HG255D_GPIO_BUTTON_WLAN,
 		.active_low	= 1,
-		.threshold      = 3,
-//		.debounce_interval = 100,
+		.threshold      = HG255D_BUTTONS_POLL_INTERVAL,
+
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= BTN_2,
 		.gpio		= HG255D_GPIO_BUTTON_WPS,
 		.active_low	= 1,
-		.threshold      = 3,
-//		.debounce_interval = 100,
+		.threshold      = HG255D_BUTTONS_POLL_INTERVAL,
+
 	}
 		
 };
