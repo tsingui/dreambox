@@ -26,7 +26,7 @@
 #define FONERA20N_GPIO_LED_POWER	9
 #define FONERA20N_GPIO_LED_USB		14
 
-#define FONERA20N_KEYS_POLL_INTERVAL	20
+#define FONERA20N_KEYS_POLL_INTERVAL	100
 #define FONERA20N_KEYS_DEBOUNCE_INTERVAL (3 * FONERA20N_KEYS_POLL_INTERVAL)
 
 static struct gpio_led fonera20n_leds_gpio[] __initdata = {
@@ -50,16 +50,14 @@ static struct gpio_button fonera20n_gpio_buttons[] __initdata = {
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = FONERA20N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.threshold	= FONERA20N_KEYS_POLL_INTERVAL,
 		.gpio		= FONERA20N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "switch",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 3,
-//		.debounce_interval = FONERA20N_KEYS_DEBOUNCE_INTERVAL,
+		.threshold	= FONERA20N_KEYS_POLL_INTERVAL,
 		.gpio		= FONERA20N_GPIO_SWITCH,
 		.active_low	= 1,
 	}

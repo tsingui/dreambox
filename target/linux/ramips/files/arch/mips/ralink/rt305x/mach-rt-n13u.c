@@ -31,7 +31,7 @@
 #define RT_N13U_GPIO_SW2               13
 #define RT_N13U_GPIO_SW3               11
 
-#define RT_N13U_BUTTONS_POLL_INTERVAL	20
+#define RT_N13U_BUTTONS_POLL_INTERVAL	100
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_n13u_partitions[] = {
@@ -90,35 +90,35 @@ static struct gpio_button rt_n13u_gpio_buttons[] __initdata = {
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}, {
 		.desc		= "sw1",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 3,
+		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}, {
 		.desc		= "sw2",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-		.threshold	= 3,
+		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}, {
 		.desc		= "sw3",
 		.type		= EV_KEY,
 		.code		= BTN_3,
-		.threshold	= 3,
+		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}

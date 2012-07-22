@@ -30,19 +30,19 @@
  GPIO [6:3] is share with SPI interface,so,if use for gpio,must disable the SPI.
  see datasheet Page NO.37.
  */
-#define HG256_GPIO_BUTTON_RESET	4 
+#define HG256_GPIO_BUTTON_RESET		4 
 #define HG256_GPIO_BUTTON_WPS		10
 #define HG256_GPIO_BUTTON_WLAN		0
 
 #define HG256_GPIO_LED_POWER		8
 #define HG256_GPIO_LED_USB		9
-#define HG256_GPIO_LED_INTERNET	13
-#define HG256_GPIO_LED_WLAN		14
-#define HG256_GPIO_LED_WPS		12
+#define HG256_GPIO_LED_INTERNET		14
+#define HG256_GPIO_LED_WLAN		12
+#define HG256_GPIO_LED_ARI		13
 #define HG256_GPIO_LED_VOICE		5
 
 
-#define HG256_BUTTONS_POLL_INTERVAL	20
+#define HG256_BUTTONS_POLL_INTERVAL	100
 #define SZ_128K				0x020000
 #define SZ_1M				0x100000
 #define BLOCK_SZ_128K			SZ_128K
@@ -107,8 +107,8 @@ static struct gpio_led hg256_led_pins[] = {
 		.gpio		= HG256_GPIO_LED_USB,
 		.active_low	= 1,
 	}, {
-		.name		= "hg256:wps",
-		.gpio		= HG256_GPIO_LED_WPS,
+		.name		= "hg256:ari",
+		.gpio		= HG256_GPIO_LED_ARI,
 		.active_low	= 1,
 	}, {
 		.name		= "hg256:voice",
@@ -131,14 +131,14 @@ static struct platform_device hg256_leds = {
 };
 
 
-static struct gpio_keys_button hg256_buttons[] __initdata = {
+static struct gpio_button hg256_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= BTN_0,
 		.gpio		= HG256_GPIO_BUTTON_RESET,
 		.active_low	= 1,
-//		.threshold      = 3,
+		.threshold      = HG256_BUTTONS_POLL_INTERVAL,
 //		.debounce_interval = 100,
 	}, {
 		.desc		= "wlan",
@@ -146,7 +146,7 @@ static struct gpio_keys_button hg256_buttons[] __initdata = {
 		.code		= BTN_1,
 		.gpio		= HG256_GPIO_BUTTON_WLAN,
 		.active_low	= 1,
-//		.threshold      = 3,
+		.threshold      = HG256_BUTTONS_POLL_INTERVAL,
 //		.debounce_interval = 100,
 	}, {
 		.desc		= "wps",
@@ -154,7 +154,7 @@ static struct gpio_keys_button hg256_buttons[] __initdata = {
 		.code		= BTN_2,
 		.gpio		= HG256_GPIO_BUTTON_WPS,
 		.active_low	= 1,
-//		.threshold      = 3,
+		.threshold      = HG256_BUTTONS_POLL_INTERVAL,
 //		.debounce_interval = 100,
 	}
 		
@@ -163,8 +163,8 @@ static struct gpio_keys_button hg256_buttons[] __initdata = {
 
 static void __init hg256_init(void)
 {
-//	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT | RT305X_GPIO_MODE_SPI | RT305X_GPIO_MODE_MDIO);
-	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT | RT305X_GPIO_MODE_SPI );
+	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT | RT305X_GPIO_MODE_SPI | RT305X_GPIO_MODE_MDIO);
+//	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT | RT305X_GPIO_MODE_SPI );
 	
 //	rt305x_register_flash(0, &hg256_flash_data);
 	rt305x_register_flash(0);
