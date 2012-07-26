@@ -22,6 +22,7 @@ enum rt305x_soc_type {
 	RT305X_SOC_RT3052,
 	RT305X_SOC_RT3350,
 	RT305X_SOC_RT3352,
+	RT305X_SOC_RT5350,
 };
 
 extern enum rt305x_soc_type rt305x_soc;
