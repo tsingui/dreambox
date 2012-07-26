@@ -25,6 +25,7 @@ platform_check_image() {
 	rt-n13 | \
 	hg255d | \
 	hg256 | \
+	wap120nf | \
 	freestation5 | \
 	hw550-3g | \
 	mofi3500-3gn | \
