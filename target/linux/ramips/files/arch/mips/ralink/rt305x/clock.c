@@ -60,7 +60,12 @@ void __init rt305x_clocks_init(void)
 			break;
 		}
 		rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
+		if (soc_is_rt3352()) {
+		rt305x_uart_clk.rate = 40000000;
+		printk(KERN_INFO "RT3352 UTART_CLK set to %ldMhz.",rt305x_uart_clk.rate/(1000*1000));
+		} else {
 		rt305x_uart_clk.rate = rt305x_sys_clk.rate / 10;
+		}
 		rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
 	} else {
 		BUG();
