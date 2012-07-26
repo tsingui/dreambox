@@ -61,6 +61,9 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WR6202,		/* Accton WR6202 */
 	RAMIPS_MACH_XDXRN502J,          /* unknown XDX-RN502J */
 	RAMIPS_MACH_UR_336UN,		/* UPVEL ROUTER */
+	
+	/* RT3352 based machines */
+	RAMIPS_MACH_WAP120NF,
 
 	/* RT3662 based machines */
 	RAMIPS_MACH_RT_N56U,		/* Asus RT-N56U */

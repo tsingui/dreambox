@@ -57,6 +57,9 @@ get_status_led() {
 	hg256)
 		status_led="hg256:power"
 		;;
+	wap120nf)
+		status_led="wap120nf:power"
+		;;
 	hw550-3g)
 		status_led="hw550-3g:green:status"
 		;;

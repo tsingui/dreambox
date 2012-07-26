@@ -98,6 +98,9 @@ ramips_board_name() {
 	*"HuaWei HG256")
 		name="hg256"
 		;;
+	*"ZyXEL WAP120NF")
+		name="wap120nf"
+		;;
 	*"MoFi Network MOFI3500-3GN")
 		name="mofi3500-3gn"
 		;;
