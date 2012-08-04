@@ -15,7 +15,7 @@ unset is_everym is_everyh is_custom
 	config_get task_Monday $1 task_Monday or 0
 	config_get task_Tuesday $1 task_Tuesday or 0
 	config_get task_Wednesday $1 task_Wednesday or 0
-	config_get task_Tursday $1 task_Tursday or 0
+	config_get task_Thursday $1 task_Thursday or 0
 	config_get task_Friday $1 task_Friday or 0
 	config_get task_Sartuday $1 task_Sartuday or 0
 	config_get task_Sunday $1 task_Sunday or 0
@@ -29,7 +29,7 @@ task_week=a
 [ $task_Monday == "1" ] && task_week=$(echo "${task_week},1")
 [ $task_Tuesday == "1" ] && task_week=$(echo "${task_week},2")
 [ $task_Wednesday == "1" ] && task_week=$(echo "${task_week},3")
-[ $task_Tursday == "1" ] && task_week=$(echo "${task_week},4")
+[ $task_Thursday == "1" ] && task_week=$(echo "${task_week},4")
 [ $task_Friday == "1" ] && task_week=$(echo "${task_week},5")
 [ $task_Sartuday == "1" ] && task_week=$(echo "${task_week},6")
 [ $task_Sunday == "1" ] && task_week=$(echo "${task_week},7")
