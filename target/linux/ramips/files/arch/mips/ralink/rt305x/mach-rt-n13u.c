@@ -31,7 +31,7 @@
 #define RT_N13U_GPIO_SW2               13
 #define RT_N13U_GPIO_SW3               11
 
-#define RT_N13U_BUTTONS_POLL_INTERVAL	100
+#define RT_N13U_BUTTONS_POLL_INTERVAL	10
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_n13u_partitions[] = {
