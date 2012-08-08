@@ -87,14 +87,14 @@ static struct gpio_button rt_n13u_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= KEY_RESTART,
+		.code		= BTN_0,
 		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= BTN_1,
 		.threshold	= RT_N13U_BUTTONS_POLL_INTERVAL,
 		.gpio		= RT_N13U_GPIO_BUTTON_WPS,
 		.active_low	= 1,
