@@ -1,0 +1,138 @@
+Index: linux-2.6.21/drivers/usb/class/usblp.c
+===================================================================
+--- linux-2.6.21.orig/drivers/usb/class/usblp.c	2009-07-17 15:57:29.000000000 +0200
++++ linux-2.6.21/drivers/usb/class/usblp.c	2009-07-17 15:58:00.000000000 +0200
+@@ -56,6 +56,16 @@
+ #include <linux/slab.h>
+ #include <linux/lp.h>
+ #include <linux/mutex.h>
++#include <linux/module.h>
++#include <linux/timer.h>
++#include <linux/interrupt.h>
++#include <linux/kobject.h>
++#include <linux/workqueue.h>
++#include <linux/skbuff.h>
++#include <linux/netlink.h>
++#include <net/sock.h>
++#include <asm/uaccess.h>
++
+ #undef DEBUG
+ #include <linux/usb.h>
+ 
+@@ -882,6 +892,65 @@
+ 
+ static DEVICE_ATTR(ieee1284_id, S_IRUGO, usblp_show_ieee1284_id, NULL);
+ 
++struct event_t {
++    struct work_struct wq;
++    int set;
++    unsigned long jiffies;
++};
++
++static inline void add_msg_lp(struct sk_buff *skb, char *msg)
++{
++	char *scratch;
++	scratch = skb_put(skb, strlen(msg) + 1);
++	sprintf(scratch, msg);
++}
++
++extern struct sock *uevent_sock;
++extern u64 uevent_next_seqnum(void);
++
++static void hotplug_lp(int connect, int bi, int dev, char *mfg, char *mdl)
++{
++	struct sk_buff *skb;
++	size_t len;
++	char *scratch, *s;
++	char buf[128];
++
++	if (!uevent_sock)
++		goto done;
++
++	/* allocate message with the maximum possible size */
++	s = connect ? "add" : "remove";
++	len = strlen(s) + 2;
++	skb = alloc_skb(len + 2048, GFP_KERNEL);
++	if (!skb)
++		goto done;
++
++	/* add header */
++	scratch = skb_put(skb, len);
++	sprintf(scratch, "%s@",s);
++
++	/* copy keys to our continuous event payload buffer */
++	add_msg_lp(skb, "HOME=/");
++	add_msg_lp(skb, "PATH=/sbin:/bin:/usr/sbin:/usr/bin");
++	add_msg_lp(skb, "SUBSYSTEM=printer");
++	add_msg_lp(skb, (connect ? "ACTION=add" : "ACTION=released"));
++	add_msg_lp(skb, (bi ? "TYPE=bi" : "TYPE=uni"));
++	snprintf(buf, 128, "SEQNUM=%llu", uevent_next_seqnum());
++	add_msg_lp(skb, buf);
++	snprintf(buf, 128, "DEVICE=lp%d", dev);
++	add_msg_lp(skb, buf);
++	snprintf(buf, 128, "MFG=%s", (mfg ? mfg : "unknown"));
++	add_msg_lp(skb, buf);
++	snprintf(buf, 128, "MDL=%s", (mdl ? mdl : "unknown"));
++	add_msg_lp(skb, buf);
++
++	NETLINK_CB(skb).dst_group = 1;
++	netlink_broadcast(uevent_sock, skb, 0, 1, GFP_KERNEL);
++
++done:
++	return;
++}
++
+ static int usblp_probe(struct usb_interface *intf,
+ 		       const struct usb_device_id *id)
+ {
+@@ -889,7 +958,9 @@
+ 	struct usblp *usblp = NULL;
+ 	int protocol;
+ 	int retval;
+-
++	char tmp[1024];
++	char *mfg = 0;
++	char *mdl = 0;
+ 	/* Malloc and start initializing usblp structure so we can use it
+ 	 * directly. */
+ 	if (!(usblp = kzalloc(sizeof(struct usblp), GFP_KERNEL))) {
+@@ -991,7 +1062,30 @@
+ 		usblp->current_protocol,
+ 		le16_to_cpu(usblp->dev->descriptor.idVendor),
+ 		le16_to_cpu(usblp->dev->descriptor.idProduct));
+-
++//	usblp_dump(usblp);
++	if(usblp->device_id_string)
++	{
++		char *t;
++		strcpy(tmp, usblp->device_id_string + 2);
++		t = strstr(tmp, "MFG:");
++		if(t)
++		{
++			mfg = t + 4;
++			t= strstr(mfg, ";");
++			if(t)
++				*t = '\0';
++		}
++		t++;
++		t = strstr(t, "MDL:");
++		if(t)
++		{
++			mdl = t + 4;
++			t= strstr(mdl, ";");
++			if(t)
++				*t = '\0';
++		}
++	}
++	hotplug_lp(1, usblp->bidir, usblp->minor, mfg, mdl);
+ 	return 0;
+ 
+ abort_intfdata:
+@@ -1186,6 +1280,7 @@
+ 		err("bogus disconnect");
+ 		BUG ();
+ 	}
++	hotplug_lp(0, usblp->bidir, usblp->minor, 0, 0);
+ 
+ 	device_remove_file(&intf->dev, &dev_attr_ieee1284_id);
+ 

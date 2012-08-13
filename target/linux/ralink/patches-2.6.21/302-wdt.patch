@@ -1,0 +1,261 @@
+Index: linux-2.6.21/drivers/char/watchdog/Kconfig
+===================================================================
+--- linux-2.6.21.orig/drivers/char/watchdog/Kconfig	2009-05-24 17:21:17.000000000 +0200
++++ linux-2.6.21/drivers/char/watchdog/Kconfig	2009-05-24 17:25:47.000000000 +0200
+@@ -586,6 +586,16 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called rm9k_wdt.
+ 
++config RAMIPS_WDT
++	tristate "ralink rt288x/rt305x Watchdog"
++	depends on WATCHDOG && RALINK_RT3052 
++	help
++	  Hardware driver for the rt288x/rt305x watchdog. This is a
++	  watchdog timer that will reboot the machine after a 60 second
++	  timer expired and no process has written to /dev/watchdog during
++	  that time.
++
++
+ # S390 Architecture
+ 
+ config ZVM_WATCHDOG
+Index: linux-2.6.21/drivers/char/watchdog/Makefile
+===================================================================
+--- linux-2.6.21.orig/drivers/char/watchdog/Makefile	2009-05-24 17:21:17.000000000 +0200
++++ linux-2.6.21/drivers/char/watchdog/Makefile	2009-05-24 17:25:47.000000000 +0200
+@@ -74,6 +74,7 @@
+ # MIPS Architecture
+ obj-$(CONFIG_INDYDOG) += indydog.o
+ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
++obj-$(CONFIG_RAMIPS_WDT) += ramips_wdt.o
+ 
+ # S390 Architecture
+ 
+Index: linux-2.6.21/drivers/char/watchdog/ramips_wdt.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21/drivers/char/watchdog/ramips_wdt.c	2009-05-24 17:25:47.000000000 +0200
+@@ -0,0 +1,223 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Copyright (C) 2008 John Crispin <blogic@openwrt.org>
++ * Based on EP93xx wdt driver
++ */
++
++#include <linux/module.h>
++#include <linux/fs.h>
++#include <linux/miscdevice.h>
++#include <linux/miscdevice.h>
++#include <linux/watchdog.h>
++#include <linux/platform_device.h>
++#include <linux/uaccess.h>
++#include <asm/rt2880/surfboardint.h>
++#include <linux/interrupt.h>
++#include <asm/rt2880/rt_mmap.h>
++
++#define PHYS_TO_K1(physaddr) KSEG1ADDR(physaddr)
++#define sysRegRead(phys) (*(volatile unsigned int *)PHYS_TO_K1(phys))
++#define sysRegWrite(phys, val)  ((*(volatile unsigned int *)PHYS_TO_K1(phys)) = (val))
++
++#define SYSCFG      RALINK_SYSCTL_BASE + 0x10  /* System Configuration Register */
++#define CLKCFG      RALINK_SYSCTL_BASE + 0x30  /* Clock Configuration Register */
++#define TMRSTAT     (RALINK_TIMER_BASE)  /* Timer Status Register */
++#define TMR1LOAD    (TMRSTAT + 0x20)  /* Timer1 Load Value */
++#define TMR1CTL     (TMRSTAT + 0x28)  /* Timer1 Control */
++
++#ifndef CONFIG_WATCHDOG_NOWAYOUT
++static int wdt_ok_to_close;
++#endif
++
++static int wdt_timeout = 30;
++
++int ramips_wdt_enable(unsigned int timeout)
++{
++	unsigned int result;
++	sysRegWrite(TMR1LOAD, wdt_timeout * (get_surfboard_sysclk() / 65536));
++	result = sysRegRead(TMR1CTL);
++	result |= (1<<7);
++	sysRegWrite(TMR1CTL, result);
++	return 0;
++}
++
++void ramips_wdt_disable(void)
++{
++	unsigned int result;
++#ifndef CONFIG_WATCHDOG_NOWAYOUT
++	wdt_ok_to_close = 0;
++#endif
++	result = sysRegRead(TMR1CTL);
++	result &= ~(1<<7);
++	sysRegWrite(TMR1CTL, result);
++}
++
++static ssize_t ramips_wdt_write(struct file *file, const char __user *data,
++		size_t len, loff_t *ppos)
++{
++#ifndef CONFIG_WATCHDOG_NOWAYOUT
++	size_t i;
++#endif
++
++	if (!len)
++		return 0;
++
++#ifndef CONFIG_WATCHDOG_NOWAYOUT
++	for (i = 0; i != len; i++) {
++		char c;
++		if (get_user(c, data + i))
++			return -EFAULT;
++		if (c == 'V')
++			wdt_ok_to_close = 1;
++	}
++#endif
++	ramips_wdt_enable(wdt_timeout);
++	return len;
++}
++
++static struct watchdog_info ident = {
++	.options = WDIOF_MAGICCLOSE,
++	.identity = "ramips Watchdog",
++};
++
++static int ramips_wdt_ioctl(struct inode *inode, struct file *file,
++		unsigned int cmd, unsigned long arg)
++{
++	int ret = -ENOTTY;
++
++	switch (cmd) {
++	case WDIOC_GETSUPPORT:
++		ret = copy_to_user((struct watchdog_info __user *)arg, &ident,
++				sizeof(ident)) ? -EFAULT : 0;
++		break;
++
++	case WDIOC_GETTIMEOUT:
++		ret = put_user(wdt_timeout, (int __user *)arg);
++		break;
++
++	case WDIOC_SETTIMEOUT:
++		ret = get_user(wdt_timeout, (int __user *)arg);
++		break;
++
++	case WDIOC_KEEPALIVE:
++		ramips_wdt_enable(wdt_timeout);
++		ret = 0;
++		break;
++	}
++	return ret;
++}
++
++#define TMR1CTL_MODE_WDT		0x03
++#define TMR1CTL_MODE_SHIFT		0x04
++#define TMR1CTL_PRESCALE_65536	0x0f
++static int ramips_wdt_open(struct inode *inode, struct file *file)
++{
++	unsigned int result;
++	ramips_wdt_enable(wdt_timeout);
++	/* turn timer1 into wdt mode and set prescalar */
++	result = sysRegRead(TMR1CTL);
++	result |= (TMR1CTL_MODE_WDT << TMR1CTL_MODE_SHIFT) | TMR1CTL_PRESCALE_65536;
++	sysRegWrite(TMR1CTL, result);
++#if defined (CONFIG_RALINK_RT2880)
++	/* turn pin SRAM_CS_N into wdt reset */
++	result = sysRegRead(CLKCFG);
++	result |= (1<<9);
++	sysRegWrite(CLKCFG,result);
++#elif defined (CONFIG_RALINK_RT3052_MP2) || defined(CONFIG_RALINK_RT2883)
++	/* turn pin SRAM_CS_MODE into wdt reset */
++	result = sysRegRead(SYSCFG);
++	result |= (1<<2);
++	sysRegWrite(SYSCFG,result);
++#else
++	#error Your ramips arch is not yet supported by the watchdog driver
++#endif
++	return nonseekable_open(inode, file);
++}
++
++static int ramips_wdt_release(struct inode *inode, struct file *file)
++{
++#ifndef CONFIG_WATCHDOG_NOWAYOUT
++	if (wdt_ok_to_close)
++		ramips_wdt_disable();
++	else
++#endif
++		printk(KERN_ERR "ramips_wdt: watchdog closed without warning,"
++			" rebooting system\n");
++	return 0;
++}
++
++static const struct file_operations ramips_wdt_fops = {
++	.owner		= THIS_MODULE,
++	.write		= ramips_wdt_write,
++	.ioctl		= ramips_wdt_ioctl,
++	.open		= ramips_wdt_open,
++	.release	= ramips_wdt_release,
++};
++
++static struct miscdevice ramips_wdt_miscdev = {
++	.minor		= WATCHDOG_MINOR,
++	.name		= "watchdog",
++	.fops		= &ramips_wdt_fops,
++};
++
++static int ramips_wdt_probe(struct platform_device *dev)
++{
++	int err;
++	err = misc_register(&ramips_wdt_miscdev);
++	if (err)
++		printk(KERN_INFO "ramips_wdt: error creating device\n");
++	else
++		printk(KERN_INFO "ramips_wdt: loaded\n");
++	return err;
++}
++
++static int ramips_wdt_remove(struct platform_device *dev)
++{
++	ramips_wdt_disable();
++	misc_deregister(&ramips_wdt_miscdev);
++	return 0;
++}
++
++
++static struct platform_driver ramips_wdt_driver = {
++	.probe = ramips_wdt_probe,
++	.remove = ramips_wdt_remove,
++	.driver = {
++		.name = "ramips_wdt",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init init_ramips_wdt(void)
++{
++	int ret = platform_driver_register(&ramips_wdt_driver);
++	if (ret)
++		printk(KERN_INFO "ramips_wdt: error registering platfom driver!");
++	return ret;
++}
++
++static void __exit exit_ramips_wdt(void)
++{
++	platform_driver_unregister(&ramips_wdt_driver);
++}
++
++module_init(init_ramips_wdt);
++module_exit(exit_ramips_wdt);
++
++MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
++MODULE_DESCRIPTION("ramips Watchdog");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
