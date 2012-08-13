@@ -1,0 +1,52 @@
+This patch adds a fonera_type variable that contains the type of Fonera
+we're running on. This variable can be used by different parts of the
+kernel to do hardware-dependent things. This is a variable (as oppossed
+to a define) so external modules (in particular rt2860v2_ap) can also
+use it (without having to recompile the external module for every
+board).
+
+Index: linux-2.6.21.7/arch/mips/rt2880/board.c
+===================================================================
+--- linux-2.6.21.7.orig/arch/mips/rt2880/board.c	2011-11-10 13:23:34.925892752 +0100
++++ linux-2.6.21.7/arch/mips/rt2880/board.c	2012-02-08 17:37:34.750480749 +0100
+@@ -5,6 +5,18 @@
+ #include <linux/string.h>
+ #include <linux/platform_device.h>
+ #include <linux/kernel.h>
++#include <asm/rt2880/fon.h>
++
++/* This variable should be a pointer to a struct, but since we only need
++ * to support a single SKU (unlike the SIMPL firmware), we just use an
++ * array containing a simple hardcoded struct. */
++struct fonera_sku fonera_sku[] = {{
++		.string = "fonera20n",
++		.type = FON20N,
++		.button = 12,
++	}};
++
++EXPORT_SYMBOL(fonera_sku);
+ 
+ static unsigned char ramips_eth_mac[6];
+ 
+Index: linux-2.6.21.7/include/asm-mips/rt2880/fon.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21.7/include/asm-mips/rt2880/fon.h	2012-02-08 17:45:32.185132681 +0100
+@@ -0,0 +1,17 @@
++enum fonera_type {
++       FON20N,
++       SIMPL_EDIMAX,
++       SIMPL_CAMEO,
++       SIMPL_CAMEO_R2,
++       SIMPL_CAMEO_MINI,
++};
++
++struct fonera_sku {
++       int type;
++       char string[64];
++       char country;
++       int button;
++       int sku_part;
++};
++
++extern struct fonera_sku fonera_sku[];
