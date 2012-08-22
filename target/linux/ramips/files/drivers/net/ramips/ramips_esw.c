@@ -289,6 +289,36 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 			      RT305X_ESW_REG_POC3);
 		break;
 
+	case RT305X_ESW_VLAN_CONFIG_VLAN_ALL:
+		rt305x_esw_set_vlan_id(esw, 0, 1); /* port0 eth1.1 */
+		rt305x_esw_set_vlan_id(esw, 1, 2); /* port1 eth1.2 */
+		rt305x_esw_set_vlan_id(esw, 2, 3); /* port2 eth1.3 */
+		rt305x_esw_set_vlan_id(esw, 3, 4); /* port3 eth1.4 */
+		rt305x_esw_set_vlan_id(esw, 4, 5); /* port4 eth1.5 */
+
+		rt305x_esw_set_vlan_id(esw, 5, 6); /*  Port5 for PHY use eth1.6 */
+
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT0, 1);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT1, 2);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT2, 3);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT3, 4);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT4, 5);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT5, 6);
+
+		rt305x_esw_set_vmsc(esw, 0,
+				BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 1,
+				BIT(RT305X_ESW_PORT1) | BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 2,
+				BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 3,
+				BIT(RT305X_ESW_PORT3) | BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 4,
+				BIT(RT305X_ESW_PORT4) | BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 5,
+				BIT(RT305X_ESW_PORT5) | BIT(RT305X_ESW_PORT6));
+		break;
+
 	case RT305X_ESW_VLAN_CONFIG_LLLLW:
 		rt305x_esw_set_vlan_id(esw, 0, 1);
 		rt305x_esw_set_vlan_id(esw, 1, 2);

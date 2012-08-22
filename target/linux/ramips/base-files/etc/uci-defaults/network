@@ -59,7 +59,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 8t"
 		ucidef_add_switch_vlan "switch0" "2" "4 8t"
 		;;
-
+	hg255d | \
+	hg256)
+		ucidef_set_interfaces_lan_wan "eth0.2 eth0.3 eth0.4 eth0.5" "eth0.1"
+		;;
+	rt-n13)
+		ucidef_set_interfaces_lan_wan "eth0.1 eth0.2 eth0.3 eth0.4 " "eth0.5"
+		;;
 	freestation5 | \
 	wcr-150gn)
 		ucidef_set_interfaces_lan_wan "eth0.2" "eth0.1"
