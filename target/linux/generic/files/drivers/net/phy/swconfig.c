@@ -33,6 +33,8 @@
 
 #define SWCONFIG_DEVNAME	"switch%d"
 
+#include "swconfig_leds.c"
+
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 MODULE_LICENSE("GPL");
 
@@ -127,6 +129,62 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct
 	return dev->ops->get_port_pvid(dev, val->port_vlan, &val->value.i);
 }
 
+static const char *
+swconfig_speed_str(enum switch_port_speed speed)
+{
+	switch (speed) {
+	case SWITCH_PORT_SPEED_10:
+		return "10baseT";
+	case SWITCH_PORT_SPEED_100:
+		return "100baseT";
+	case SWITCH_PORT_SPEED_1000:
+		return "1000baseT";
+	default:
+		break;
+	}
+
+	return "unknown";
+}
+
+static int
+swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct switch_port_link link;
+	int len;
+	int ret;
+
+	if (val->port_vlan >= dev->ports)
+		return -EINVAL;
+
+	if (!dev->ops->get_port_link)
+		return -EOPNOTSUPP;
+
+	memset(&link, 0, sizeof(link));
+	ret = dev->ops->get_port_link(dev, val->port_vlan, &link);
+	if (ret)
+		return ret;
+
+	memset(dev->buf, 0, sizeof(dev->buf));
+
+	if (link.link)
+		len = snprintf(dev->buf, sizeof(dev->buf),
+			       "port:%d link:up speed:%s %s-duplex %s%s%s",
+			       val->port_vlan,
+			       swconfig_speed_str(link.speed),
+			       link.duplex ? "full" : "half",
+			       link.tx_flow ? "txflow ": "",
+			       link.rx_flow ?	"rxflow " : "",
+			       link.aneg ? "auto" : "");
+	else
+		len = snprintf(dev->buf, sizeof(dev->buf), "port:%d link:down",
+			       val->port_vlan);
+
+	val->value.s = dev->buf;
+	val->len = len;
+
+	return 0;
+}
+
 static int
 swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
@@ -158,6 +216,7 @@ enum vlan_defaults {
 
 enum port_defaults {
 	PORT_PVID,
+	PORT_LINK,
 };
 
 static struct switch_attr default_global[] = {
@@ -182,6 +241,13 @@ static struct switch_attr default_port[] = {
 		.description = "Primary VLAN ID",
 		.set = swconfig_set_pvid,
 		.get = swconfig_get_pvid,
+	},
+	[PORT_LINK] = {
+		.type = SWITCH_TYPE_STRING,
+		.name = "link",
+		.description = "Get port link information",
+		.set = NULL,
+		.get = swconfig_get_link,
 	}
 };
 
@@ -195,6 +261,17 @@ static struct switch_attr default_vlan[] = {
 	},
 };
 
+static const struct switch_attr *
+swconfig_find_attr_by_name(const struct switch_attrlist *alist, const char *name)
+{
+	int i;
+
+	for (i = 0; i < alist->n_attr; i++)
+		if (strcmp(name, alist->attr[i].name) == 0)
+			return &alist->attr[i];
+
+	return NULL;
+}
 
 static void swconfig_defaults_init(struct switch_dev *dev)
 {
@@ -209,6 +286,10 @@ static void swconfig_defaults_init(struct switch_dev *dev)
 
 	if (ops->get_port_pvid || ops->set_port_pvid)
 		set_bit(PORT_PVID, &dev->def_port);
+
+	if (ops->get_port_link &&
+	    !swconfig_find_attr_by_name(&ops->attr_port, "link"))
+		set_bit(PORT_LINK, &dev->def_port);
 
 	/* always present, can be no-op */
 	set_bit(GLOBAL_APPLY, &dev->def_global);
@@ -272,7 +353,7 @@ swconfig_get_dev(struct genl_info *info)
 		break;
 	}
 	if (dev)
-		spin_lock(&dev->lock);
+		mutex_lock(&dev->sw_mutex);
 	else
 		DPRINTF("device %d not found\n", id);
 	swconfig_unlock();
@@ -283,7 +364,7 @@ done:
 static inline void
 swconfig_put_dev(struct switch_dev *dev)
 {
-	spin_unlock(&dev->lock);
+	mutex_unlock(&dev->sw_mutex);
 }
 
 static int
@@ -863,6 +944,7 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	struct switch_dev *sdev;
 	const int max_switches = 8 * sizeof(unsigned long);
 	unsigned long in_use = 0;
+	int err;
 	int i;
 
 	INIT_LIST_HEAD(&dev->dev_list);
@@ -880,7 +962,7 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 			return -ENOMEM;
 	}
 	swconfig_defaults_init(dev);
-	spin_lock_init(&dev->lock);
+	mutex_init(&dev->sw_mutex);
 	swconfig_lock();
 	dev->id = ++swdev_id;
 
@@ -894,14 +976,20 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	}
 	i = find_first_zero_bit(&in_use, max_switches);
 
-	if (i == max_switches)
+	if (i == max_switches) {
+		swconfig_unlock();
 		return -ENFILE;
+	}
 
 	/* fill device name */
 	snprintf(dev->devname, IFNAMSIZ, SWCONFIG_DEVNAME, i);
 
 	list_add(&dev->dev_list, &swdevs);
 	swconfig_unlock();
+
+	err = swconfig_create_led_trigger(dev);
+	if (err)
+		return err;
 
 	return 0;
 }
@@ -910,12 +998,13 @@ EXPORT_SYMBOL_GPL(register_switch);
 void
 unregister_switch(struct switch_dev *dev)
 {
+	swconfig_destroy_led_trigger(dev);
 	kfree(dev->portbuf);
-	spin_lock(&dev->lock);
+	mutex_lock(&dev->sw_mutex);
 	swconfig_lock();
 	list_del(&dev->dev_list);
 	swconfig_unlock();
-	spin_unlock(&dev->lock);
+	mutex_unlock(&dev->sw_mutex);
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 

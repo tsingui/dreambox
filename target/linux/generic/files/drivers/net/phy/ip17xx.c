@@ -1332,6 +1332,17 @@ static int ip17xx_config_aneg(struct phy_device *pdev)
 	return 0;
 }
 
+static int ip17xx_aneg_done(struct phy_device *pdev)
+{
+	return BMSR_ANEGCOMPLETE;
+}
+
+static int ip17xx_update_link(struct phy_device *pdev)
+{
+	pdev->link = 1;
+	return 0;
+}
+
 static int ip17xx_read_status(struct phy_device *pdev)
 {
 	pdev->speed = SPEED_100;
@@ -1351,6 +1362,8 @@ static struct phy_driver ip17xx_driver = {
 	.remove		= ip17xx_remove,
 	.config_init	= ip17xx_config_init,
 	.config_aneg	= ip17xx_config_aneg,
+	.aneg_done	= ip17xx_aneg_done,
+	.update_link	= ip17xx_update_link,
 	.read_status	= ip17xx_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
@@ -1364,6 +1377,8 @@ static struct phy_driver ip175a_driver = {
 	.remove		= ip17xx_remove,
 	.config_init	= ip17xx_config_init,
 	.config_aneg	= ip17xx_config_aneg,
+	.aneg_done	= ip17xx_aneg_done,
+	.update_link	= ip17xx_update_link,
 	.read_status	= ip17xx_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
