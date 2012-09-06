@@ -115,7 +115,7 @@ static void __init rt_n13u_init(void)
 				     ARRAY_SIZE(rt_n13u_gpio_buttons),
 				     rt_n13u_gpio_buttons);
 
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_VLAN_ALL;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();

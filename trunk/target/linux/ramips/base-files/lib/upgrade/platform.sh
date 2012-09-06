@@ -26,6 +26,7 @@ platform_check_image() {
 	hg255d | \
 	hg256 | \
 	wap120nf | \
+	ap8100rt | \
 	freestation5 | \
 	hw550-3g | \
 	mofi3500-3gn | \

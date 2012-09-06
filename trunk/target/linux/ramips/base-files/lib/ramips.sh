@@ -101,6 +101,9 @@ ramips_board_name() {
 	*"ZyXEL WAP120NF")
 		name="wap120nf"
 		;;
+	*"ZBT AP8100RT")
+		name="ap8100rt"
+		;;
 	*"MoFi Network MOFI3500-3GN")
 		name="mofi3500-3gn"
 		;;

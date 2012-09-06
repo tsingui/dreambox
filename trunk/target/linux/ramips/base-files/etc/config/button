@@ -9,7 +9,7 @@ config button
 
 config button
         option button   BTN_1
-        option action   released
+        option action   pressed
         option handler  "wifitoggle"
         option min              1
         option max              5

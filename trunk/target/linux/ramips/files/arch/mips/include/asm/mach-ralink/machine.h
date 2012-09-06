@@ -32,6 +32,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_NW718,		/* Netcore NW718 */
 	RAMIPS_MACH_WL_330N,		/* Asus WL-330N */
 	RAMIPS_MACH_WL_330N3G,		/* Asus WL-330N3G */
+	RAMIPS_MACH_AP8100RT,		/* ZBT AP8100RT */
 
 	/* RT3052 based machines */
 	RAMIPS_MACH_ARGUS_ATP52B,	/* Argus ATP-52B */
