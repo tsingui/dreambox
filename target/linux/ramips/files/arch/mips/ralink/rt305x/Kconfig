@@ -82,6 +82,12 @@ config RT305X_MACH_HG255D
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_AP8100RT
+	bool "ZBT AP8100RT board support"
+	default y
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_HG256
 	bool "HuaWei HG256 board support"
 	default y

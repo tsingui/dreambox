@@ -217,6 +217,10 @@ define BuildFirmware/HG255D
 	$(call BuildFirmware/GENERIC_16M,$(1),hg255d,HG255D,ttyS1,57600,phys)
 endef
 
+define BuildFirmware/AP8100RT
+	$(call BuildFirmware/GENERIC_8M,$(1),ap8100rt,AP8100RT,ttyS1,57600,phys)
+endef
+
 define BuildFirmware/HG256
 	$(call BuildFirmware/GENERIC_8M,$(1),hg256,HG256,ttyS1,57600,phys)
 endef
@@ -384,8 +388,15 @@ define Image/Build/Profile/HG255D
 	$(call Image/Build/Template/$(fs_squash)/$(1),HG255D)
 endef
 
+define Image/Build/Profile/AP8100RT
+	$(call Image/Build/Template/$(fs_squash)/$(1),AP8100RT)
+endef
+
 define Image/Build/Profile/HG256
 	$(call Image/Build/Template/$(fs_squash)/$(1),HG256)
+	$(call Image/Build/Template/$(fs_squash)/$(1),HG255D)
+	$(call Image/Build/Template/$(fs_squash)/$(1),RT-N13U)
+	$(call Image/Build/Template/$(fs_squash)/$(1),AP8100RT)
 endef
 
 define Image/Build/Profile/RT-N13U

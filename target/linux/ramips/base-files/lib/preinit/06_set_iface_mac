@@ -34,6 +34,7 @@ preinit_set_mac_address() {
 	rt-n13 |\
 	hg255d |\
 	hg256 |\
+	ap8100rt |\
 	wap120nf |\
 	hw550-3g |\
 	nbg-419n |\

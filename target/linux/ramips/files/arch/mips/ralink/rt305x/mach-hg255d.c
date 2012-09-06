@@ -260,7 +260,7 @@ static void __init hg255d_init(void)
 			      hg255d_buttons);
 #endif
 
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_VLAN_ALL;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();
