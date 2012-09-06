@@ -32,6 +32,10 @@ struct rtl8366_smi {
 	struct device		*parent;
 	unsigned int		gpio_sda;
 	unsigned int		gpio_sck;
+	void			(*hw_reset)(bool active);
+	unsigned int		clk_delay;	/* ns */
+	u8			cmd_read;
+	u8			cmd_write;
 	spinlock_t		lock;
 	struct mii_bus		*mii_bus;
 	int			mii_irq[PHY_MAX_ADDR];
@@ -49,7 +53,7 @@ struct rtl8366_smi {
 	int			vlan4k_enabled;
 
 	char			buf[4096];
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 	struct dentry           *debugfs_root;
 	u16			dbg_reg;
 	u8			dbg_vlan_4k_page;
@@ -58,21 +62,22 @@ struct rtl8366_smi {
 
 struct rtl8366_vlan_mc {
 	u16	vid;
-	u8	priority;
-	u8	untag;
-	u8	member;
+	u16	untag;
+	u16	member;
 	u8	fid;
+	u8	priority;
 };
 
 struct rtl8366_vlan_4k {
 	u16	vid;
-	u8	untag;
-	u8	member;
+	u16	untag;
+	u16	member;
 	u8	fid;
 };
 
 struct rtl8366_smi_ops {
 	int	(*detect)(struct rtl8366_smi *smi);
+	int	(*reset_chip)(struct rtl8366_smi *smi);
 	int	(*setup)(struct rtl8366_smi *smi);
 
 	int	(*mii_read)(struct mii_bus *bus, int addr, int reg);
@@ -100,6 +105,7 @@ struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent);
 int rtl8366_smi_init(struct rtl8366_smi *smi);
 void rtl8366_smi_cleanup(struct rtl8366_smi *smi);
 int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data);
+int rtl8366_smi_write_reg_noack(struct rtl8366_smi *smi, u32 addr, u32 data);
 int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data);
 int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data);
 
@@ -107,7 +113,7 @@ int rtl8366_reset_vlan(struct rtl8366_smi *smi);
 int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable);
 int rtl8366_enable_all_ports(struct rtl8366_smi *smi, int enable);
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file);
 #endif
 
@@ -116,6 +122,7 @@ static inline struct rtl8366_smi *sw_to_rtl8366_smi(struct switch_dev *sw)
 	return container_of(sw, struct rtl8366_smi, sw_dev);
 }
 
+int rtl8366_sw_reset_switch(struct switch_dev *dev);
 int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val);
 int rtl8366_sw_set_port_pvid(struct switch_dev *dev, int port, int val);
 int rtl8366_sw_get_port_mib(struct switch_dev *dev,
