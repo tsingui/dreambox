@@ -33,7 +33,6 @@ preinit_set_mac_address() {
 	fonera20n |\
 	rt-n13 |\
 	hg255d |\
-	hg256 |\
 	ap8100rt |\
 	wap120nf |\
 	hw550-3g |\
@@ -52,7 +51,11 @@ preinit_set_mac_address() {
 		mac=$(ramips_get_mac_binary board-nvram 65440)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
-	rt-n10-plus)
+	hg256)
+		mac=$(ramips_get_mac_binary factory 73732)
+		ifconfig eth0 hw ether $mac 2>/dev/null
+		;;
+		rt-n10-plus)
 		mac=$(ramips_get_mac_binary devconf 4)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
