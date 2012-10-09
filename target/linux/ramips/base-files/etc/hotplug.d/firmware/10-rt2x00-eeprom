@@ -56,7 +56,6 @@ case "$FIRMWARE" in
 	fonera20n | \
 	rt-n13 | \
 	hg255d | \
-	hg256 | \
 	wap120nf | \
 	ap8100rt | \
 	freestation5 | \
@@ -89,6 +88,9 @@ case "$FIRMWARE" in
 
 	wl341v3)
 		rt2x00_eeprom_extract "board-nvram" 64880 272
+		;;
+	hg256)
+		rt2x00_eeprom_extract "factory" 73728 272
 		;;
 
 	*)

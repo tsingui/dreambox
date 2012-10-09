@@ -124,6 +124,31 @@ define BuildFirmware/GENERIC_8M/initramfs
 	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)))
 endef
 
+mtdlayout_8M_hg256=128k(u-boot)ro,1024k(kernel),6912k(rootfs),128k@0x7e0000(factory),7936k@0x20000(firmware)ro,8192k@0x00000(fullflash)
+kernel_size_8M_hg256=1048576
+rootfs_size_8M_hg256=7077888
+define BuildFirmware/GENERIC_8M_hg256
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M_hg256)),$(kernel_size_8M_hg256),$(rootfs_size_8M_hg256))
+endef
+
+define BuildFirmware/GENERIC_8M_hg256_2/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M_hg256)))
+endef
+
+
+mtdlayout_8M_hg256_2=192k(u-boot)ro,64k(u-boot-env)ro,64k(keep_config)ro,896k(kernel),6848k(rootfs),128k@0x7e0000(factory),7744k@0x50000(firmware),8192k@0x00000(fullflash)
+kernel_size_8M_hg256_2=917504
+rootfs_size_8M_hg256_2=7012352
+define BuildFirmware/GENERIC_8M_hg256_2
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M_hg256_2)),$(kernel_size_8M_hg256_2),$(rootfs_size_8M_hg256_2))
+endef
+
+define BuildFirmware/GENERIC_8M_256_2/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M_hg256_2)))
+endef
+
+
+
 mtdlayout_16M=256k(u-boot)ro,128k(u-boot-env)ro,128k(factory)ro,1024k(kernel),14848k(rootfs),15872k@0x80000(firmware),16384k@0x0(fullflash)
 kernel_size_16M=1048576
 rootfs_size_16M=15204352
@@ -222,7 +247,7 @@ define BuildFirmware/AP8100RT
 endef
 
 define BuildFirmware/HG256
-	$(call BuildFirmware/GENERIC_8M,$(1),hg256,HG256,ttyS1,57600,phys)
+	$(call BuildFirmware/GENERIC_8M_hg256,$(1),hg256,HG256,ttyS1,57600,phys)
 endef
 
 mtdlayout_nw718=192k(u-boot)ro,128k(config)ro,64k(factory)ro,896k(kernel),2816k(rootfs),3712k@0x60000(firmware)
