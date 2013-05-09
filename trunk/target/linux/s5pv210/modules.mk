@@ -1,4 +1,0 @@
-ifeq ($(CONFIG_TARGET_s5pv210),y)
-	SOUNDCORE_FILES =
-	SOUNDCORE_LOAD =
-endif
