@@ -5,7 +5,7 @@
  	sc->sc_ah = ah;
  
 +	/* WAR for AR7100 PCI bug */
-+#ifdef CONFIG_ATHEROS_AR71XX
++#if defined(CONFIG_ATHEROS_AR71XX) || defined(CONFIG_ATH79)
 +	if ((ar_device(sc->devid) >= 5210) && (ar_device(sc->devid) < 5416)) {
 +		ath_hal_setcapability(ah, HAL_CAP_DMABURST_RX, 0, HAL_DMABURST_4B, NULL);
 +		ath_hal_setcapability(ah, HAL_CAP_DMABURST_TX, 0, HAL_DMABURST_4B, NULL);
@@ -15,7 +15,7 @@
  	/*
  	 * Check if the MAC has multi-rate retry support.
  	 * We do this by trying to setup a fake extended
-@@ -7568,7 +7576,7 @@ ath_txq_setup(struct ath_softc *sc, int 
+@@ -7568,7 +7576,7 @@ ath_txq_setup(struct ath_softc *sc, int
  	if (qtype == HAL_TX_QUEUE_UAPSD)
  		qi.tqi_qflags = HAL_TXQ_TXDESCINT_ENABLE;
  	else

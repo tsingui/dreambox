@@ -8,13 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=0.9.22
-PKG_RELEASE:=2
+PKG_VERSION:=3.6
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
-PKG_MD5SUM:=561c2602c5ce7c65a590118286c0892a
-PKG_BUILD_DEPENDS:=mac80211
+PKG_MD5SUM:=1c18bfbbc8773629e5e8ac733a39540c
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -35,7 +34,6 @@ endef
 
 TARGET_CPPFLAGS:= \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
-	-I$(STAGING_DIR)/usr/include/mac80211 \
 	$(TARGET_CPPFLAGS) \
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE

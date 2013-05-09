@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ PKG_NAME:=kernel
 PKG_FLAGS:=hold
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
-SCAN_DEPS=modules/*.mk
+SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
@@ -35,7 +35,8 @@ define Package/kernel
   CATEGORY:=Kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
-  VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)
+  VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC)
+  URL:=http://www.kernel.org/
 endef
 
 define Package/kernel/install
@@ -44,5 +45,5 @@ endef
 
 $(eval $(if $(DUMP),,$(call BuildPackage,kernel)))
 
+include $(sort $(wildcard ./modules/*.mk))
 -include $(TOPDIR)/target/linux/*/modules.mk
-include ./modules/*.mk

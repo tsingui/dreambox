@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -20,12 +20,14 @@ ARCH:=$(shell uname -m | sed \
 )
 BOARD:=uml
 BOARDNAME:=User Mode Linux
-FEATURES:=ext2 audio
-LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
+FEATURES:=ext4 audio
+MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
+
+LINUX_TARGET_CONFIG:=$(CURDIR)/config/$(ARCH)
 
 DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
 

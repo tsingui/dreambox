@@ -1,7 +1,7 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -7,6 +7,11 @@ ifeq ($(WITHOUT_XATTR), 1)
-   CPPFLAGS += -DWITHOUT_XATTR
+@@ -12,6 +12,11 @@ else
+   LZOLDLIBS = -llzo2
  endif
  
 +ifeq ($(shell uname -o),Cygwin)
@@ -9,10 +9,10 @@
 +endif
 +
 +ifneq ($(shell uname -o),Cygwin)
- SUBDIRS = ubi-utils mkfs.ubifs
+ SUBDIRS = lib ubi-utils mkfs.ubifs
+ TESTS = tests
  
- TARGETS = ftl_format flash_erase flash_eraseall nanddump doc_loadbios \
-@@ -17,6 +22,10 @@ TARGETS = ftl_format flash_erase flash_e
+@@ -23,6 +28,10 @@ TARGETS = ftl_format flash_erase nanddum
  	rfddump rfdformat \
  	serve_image recv_image \
  	sumtool #jffs2reader
@@ -20,9 +20,9 @@
 +SUBDIRS =
 +TARGETS = mkfs.jffs2
 +endif
+ SCRIPTS = flash_eraseall
  
  SYMLINKS =
- 
 --- /dev/null
 +++ b/include/cygwin/bits-byteswap.h
 @@ -0,0 +1,132 @@
@@ -373,9 +373,9 @@
 +
 --- a/mkfs.jffs2.c
 +++ b/mkfs.jffs2.c
-@@ -75,6 +75,14 @@
- #include "crc32.h"
+@@ -77,6 +77,14 @@
  #include "rbtree.h"
+ #include "common.h"
  
 +#ifdef __CYGWIN__
 +#include <cygwin/ioctl.h>
@@ -388,7 +388,7 @@
  /* Do not use the weird XPG version of basename */
  #undef basename
  
-@@ -474,7 +482,7 @@ static struct filesystem_entry *recursiv
+@@ -376,7 +384,7 @@ static struct filesystem_entry *recursiv
     the following macros use it if available or use a hacky workaround...
   */
  
@@ -397,10 +397,10 @@
  #define SCANF_PREFIX "a"
  #define SCANF_STRING(s) (&s)
  #define GETCWD_SIZE 0
-@@ -557,6 +565,14 @@ static int interpret_table_entry(struct 
+@@ -459,6 +467,14 @@ static int interpret_table_entry(struct
  	}
  	entry = find_filesystem_entry(root, name, mode);
- 	if (entry) {
+ 	if (entry && !(count > 0 && (type == 'c' || type == 'b'))) {
 +		/* Check the type */
 +		if ((mode & S_IFMT) != (entry->sb.st_mode & S_IFMT)) {
 +			error_msg ("skipping device_table entry '%s': type mismatch!", name);
@@ -412,7 +412,7 @@
  		/* Ok, we just need to fixup the existing entry
  		 * and we will be all done... */
  		entry->sb.st_uid = uid;
-@@ -566,11 +582,21 @@ static int interpret_table_entry(struct 
+@@ -468,11 +484,21 @@ static int interpret_table_entry(struct
  			entry->sb.st_rdev = makedev(major, minor);
  		}
  	} else {
@@ -434,8 +434,8 @@
 +		}
  		free(tmp);
  		if (parent == NULL) {
- 			error_msg ("skipping device_table entry '%s': no parent directory!", name);
-@@ -584,6 +610,7 @@ static int interpret_table_entry(struct 
+ 			errmsg ("skipping device_table entry '%s': no parent directory!", name);
+@@ -486,6 +512,7 @@ static int interpret_table_entry(struct
  				add_host_filesystem_entry(name, hostpath, uid, gid, mode, 0, parent);
  				break;
  			case 'f':
@@ -445,7 +445,7 @@
  			case 'p':
 --- a/ubi-utils/src/libubi.c
 +++ b/ubi-utils/src/libubi.c
-@@ -30,6 +30,9 @@
+@@ -32,6 +32,9 @@
  #include <sys/ioctl.h>
  #include <sys/stat.h>
  #include <sys/types.h>

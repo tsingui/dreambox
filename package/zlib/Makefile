@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
-PKG_VERSION:=1.2.3
-PKG_RELEASE:=5
+PKG_VERSION:=1.2.7
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
-PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
+PKG_SOURCE_URL:=http://www.zlib.net @SF/libpng
+PKG_MD5SUM:=2ab442d169156f34c379c968f3f482dd
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -29,19 +29,18 @@ define Build/Configure
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
 		CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
-		UNAME_S="Linux" \
 		./configure \
 			--prefix=/usr \
 			--shared \
+			--uname=Linux \
 	);
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		LDSHARED="$(TARGET_CROSS)ld -shared" \
-		CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
-		libz.a libz.so
+		CFLAGS="$(TARGET_CFLAGS)" \
+		libz.a libz.so.$(PKG_VERSION)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -55,6 +54,9 @@ define Build/InstallDev
 	mkdir -p $(1)/usr/lib
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
 		$(1)/usr/lib/
+	mkdir -p $(1)/usr/lib/pkgconfig
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/zlib.pc \
+		$(1)/usr/lib/pkgconfig/
 endef
 
 # libz.so is needed for openssl (zlib-dynamic)

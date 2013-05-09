@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=6.8
-PKG_RELEASE:=2
+PKG_VERSION:=6.8a
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_MD5SUM:=c9da266b884fb8fa54df786dfaadbc7a
+PKG_MD5SUM:=da20d043e6729f74b909bd507bcae5c9
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-6.8
+
+PKG_BUILD_PARALLEL:=0
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,6 +24,7 @@ define Package/gdb/Default
   SECTION:=utils
   CATEGORY:=Utilities
   DEPENDS:=@!(avr32||cris)
+  URL:=http://www.gnu.org/software/gdb/
 endef
 
 define Package/gdb
@@ -48,13 +52,14 @@ endef
 # XXX: add --disable-werror to prevent build failure with arm
 CONFIGURE_ARGS+= \
 	--with-system-readline \
+	--without-expat \
 	--disable-werror
 
 CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		all
@@ -72,6 +77,10 @@ endef
 define Package/gdbserver/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/gdbserver $(1)/usr/bin/
+ifneq ($(CONFIG_USE_EGLIBC),)
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(TOOLCHAIN_DIR)/lib/libthread_db* $(1)/usr/lib
+endif
 endef
 
 $(eval $(call BuildPackage,gdb))

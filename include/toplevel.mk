@@ -1,13 +1,12 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
-RELEASE:=Trunk
-SHELL:=/usr/bin/env bash
+RELEASE:=Attitude Adjustment
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
 include $(TOPDIR)/include/verbose.mk
@@ -18,19 +17,27 @@ else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
 endif
 
+HOSTCC ?= gcc
 OPENWRTVERSION:=$(RELEASE)$(if $(REVISION), ($(REVISION)))
 export RELEASE
 export REVISION
 export OPENWRTVERSION
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
-export LD_LIBRARY_PATH:=$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib
-export DYLD_LIBRARY_PATH:=$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib
+export LD_LIBRARY_PATH:=$(subst ::,:,$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
+export DYLD_LIBRARY_PATH:=$(subst ::,:,$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
+export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
+export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
 
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
 
 # prevent user defaults for quilt from interfering
 unexport QUILT_PATCHES QUILT_PATCH_OPTS
+
+unexport C_INCLUDE_PATH CROSS_COMPILE ARCH
+
+# prevent distro default LPATH from interfering
+unexport LPATH
 
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
@@ -64,12 +71,12 @@ prepare-tmpinfo: FORCE
 	fi
 
 scripts/config/mconf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all CC="$(HOSTCC)"
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf CC="$(HOSTCC)"
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
@@ -92,9 +99,9 @@ menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 
 prepare_kernel_conf: .config FORCE
 
-ifeq ($(wildcard staging_dir/host/bin/sed),)
+ifeq ($(wildcard staging_dir/host/bin/quilt),)
   prepare_kernel_conf:
-	@+$(SUBMAKE) -r tools/sed/install
+	@+$(SUBMAKE) -r tools/quilt/install
 else
   prepare_kernel_conf: ;
 endif
@@ -105,6 +112,9 @@ kernel_oldconfig: prepare_kernel_conf
 kernel_menuconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux menuconfig
 
+kernel_nconfig: prepare_kernel_conf
+	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux nconfig
+
 tmp/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
 	rm -f tmp/.host.mk
@@ -113,6 +123,9 @@ tmp/.prereq-build: include/prereq-build.mk
 		false; \
 	}
 	touch $@
+
+printdb: FORCE
+	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ V=99 DUMP_TARGET_DB=1 2>&1
 
 download: .config FORCE
 	@+$(SUBMAKE) tools/download
@@ -129,6 +142,13 @@ prereq:: prepare-tmpinfo .config
 
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
+	@( \
+		cp .config tmp/.config; \
+		./scripts/config/conf -D tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
+		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
+			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!"; \
+		fi \
+	)
 	@+$(SUBMAKE) -r $@
 
 help:

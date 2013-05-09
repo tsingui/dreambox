@@ -41,21 +41,19 @@ struct spi_board_info __initdata rt_g32b_spi_slave_info[] = {
 	},
 };
 
-static struct gpio_button rt_g32b_gpio_buttons[] __initdata = {
+static struct gpio_keys_button rt_g32b_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = RT_G32B_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = RT_G32B_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= RT_G32B_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-//		.debounce_interval = RT_G32B_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = RT_G32B_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= RT_G32B_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}

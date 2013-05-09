@@ -47,21 +47,19 @@ static struct gpio_led nw718_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button nw718_gpio_buttons[] __initdata = {
+static struct gpio_keys_button nw718_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = NW718_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = NW718_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NW718_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-//		.debounce_interval = NW718_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = NW718_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NW718_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}

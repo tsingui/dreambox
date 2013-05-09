@@ -36,8 +36,14 @@ get_status_led() {
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
-	dir-300-b1 | dir-600-b1 | dir-600-b2)
+	dir-300-b1 | dir-600-b1 | dir-600-b2 | dir-615-h1 | dir-615-d | dir-620-a1 | dir-620-d1)
 		status_led="d-link:green:status"
+		;;
+	dir-645)
+		status_led="d-link:green:wps"
+		;;
+	dap-1350)
+		status_led="d-link:blue:power"
 		;;
 	esr-9753)
 		status_led="esr-9753:orange:power"
@@ -48,18 +54,7 @@ get_status_led() {
 	fonera20n)
 		status_led="fonera20n:green:power"
 		;;
-	rt-n13)
-		status_led="rt-n13:power"
-		;;
-	hg255d)
-		status_led="hg255d:power"
-		;;
-	hg256)
-		status_led="hg256:power"
-		;;
-	wap120nf)
-		status_led="wap120nf:power"
-		;;
+	all0239-3g|\
 	hw550-3g)
 		status_led="hw550-3g:green:status"
 		;;
@@ -92,6 +87,10 @@ get_status_led() {
 		;;
 	sl-r7205)
 		status_led="sl-r7205:green:status"
+		;;
+	tew-691gr|\
+	tew-692gr)
+		status_led="trendnet:green:wps"
 		;;
 	v11st-fe)
 		status_led="v11st-fe:green:status"

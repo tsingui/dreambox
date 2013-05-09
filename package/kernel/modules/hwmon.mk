@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006,2007 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,12 +10,11 @@ HWMON_MENU:=Hardware Monitoring Support
 define KernelPackage/hwmon-core
   SUBMENU:=$(HWMON_MENU)
   TITLE:=Hardware monitoring support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_HWMON \
 	CONFIG_HWMON_DEBUG_CHIP=n
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/hwmon/hwmon.ko
   AUTOLOAD:=$(call AutoLoad,40,hwmon)
 endef
 
@@ -26,18 +25,62 @@ endef
 $(eval $(call KernelPackage,hwmon-core))
 
 
-define KernelPackage/hwmon/Depends
+define AddDepends/hwmon
   SUBMENU:=$(HWMON_MENU)
   DEPENDS:=kmod-hwmon-core $(1)
 endef
 
+define KernelPackage/hwmon-vid
+  TITLE:=VID/VRM/VRD voltage conversion module.
+  KCONFIG:=CONFIG_HWMON_VID
+  FILES:=$(LINUX_DIR)/drivers/hwmon/hwmon-vid.ko
+  AUTOLOAD:=$(call AutoLoad,41,hwmon-vid)
+  $(call AddDepends/hwmon,)
+endef
+
+define KernelPackage/hwmon-vid/description
+  VID/VRM/VRD voltage conversion module for hardware monitoring.
+endef
+
+$(eval $(call KernelPackage,hwmon-vid))
+
+
+define KernelPackage/hwmon-adt7475
+  TITLE:=ADT7473/7475/7476/7490 monitoring support
+  KCONFIG:=CONFIG_SENSORS_ADT7475
+  FILES:=$(LINUX_DIR)/drivers/hwmon/adt7475.ko
+  AUTOLOAD:=$(call AutoLoad,60,adt7475)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-adt7475/description
+  Kernel module for ADT7473/7475/7476/7490 thermal monitor chip.
+endef
+
+$(eval $(call KernelPackage,hwmon-adt7475))
+
+
+define KernelPackage/hwmon-lm63
+  TITLE:=LM63/64 monitoring support
+  KCONFIG:=CONFIG_SENSORS_LM63
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm63.ko
+  AUTOLOAD:=$(call AutoLoad,60,lm63)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-lm63/description
+ Kernel module for lm63 and lm64 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-lm63))
+
 
 define KernelPackage/hwmon-lm75
-$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
   TITLE:=LM75 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM75
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.ko
   AUTOLOAD:=$(call AutoLoad,60,lm75)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-lm75/description
@@ -48,11 +91,11 @@ $(eval $(call KernelPackage,hwmon-lm75))
 
 
 define KernelPackage/hwmon-lm77
-$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
   TITLE:=LM77 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM77
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.ko
   AUTOLOAD:=$(call AutoLoad,60,lm77)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-lm77/description
@@ -61,12 +104,28 @@ endef
 
 $(eval $(call KernelPackage,hwmon-lm77))
 
+
+define KernelPackage/hwmon-lm85
+  TITLE:=LM85 monitoring support
+  KCONFIG:=CONFIG_SENSORS_LM85
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm85.ko
+  AUTOLOAD:=$(call AutoLoad,60,lm85)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-lm85/description
+ Kernel module for LM85 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-lm85))
+
+
 define KernelPackage/hwmon-lm90
-$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
   TITLE:=LM90 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM90
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.ko
   AUTOLOAD:=$(call AutoLoad,60,lm90)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-lm90/description
@@ -75,16 +134,40 @@ endef
 
 $(eval $(call KernelPackage,hwmon-lm90))
 
+define KernelPackage/hwmon-lm95241
+  TITLE:=LM95241 monitoring support
+  KCONFIG:=CONFIG_SENSORS_LM95241
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm95241.ko
+  AUTOLOAD:=$(call AutoLoad,60,lm95241)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-lm95241/description
+ Kernel module for LM95241 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-lm95241))
+
+define KernelPackage/hwmon-sht21
+  TITLE:=Sensiron SHT21 and compat. monitoring support
+  KCONFIG:=CONFIG_SENSORS_SHT21
+  FILES:=$(LINUX_DIR)/drivers/hwmon/sht21.ko
+  AUTOLOAD:=$(call AutoLoad,60,sht21)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-sht21/description
+ Kernel module for Sensirion SHT21 and SHT25 temperature and humidity sensors chip
+endef
+
+$(eval $(call KernelPackage,hwmon-sht21))
+
 define KernelPackage/hwmon-pc87360
-$(call KernelPackage/hwmon/Depends,@TARGET_x86)
   TITLE:=PC87360 monitoring support
-  KCONFIG:= \
-	CONFIG_SENSORS_PC87360 \
-	CONFIG_HWMON_VID
-  FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hwmon-vid pc87360)
+  KCONFIG:=CONFIG_SENSORS_PC87360
+  FILES:=$(LINUX_DIR)/drivers/hwmon/pc87360.ko
+  AUTOLOAD:=$(call AutoLoad,50,pc87360)
+  $(call AddDepends/hwmon,@TARGET_x86 +kmod-hwmon-vid)
 endef
 
 define KernelPackage/hwmon-pc87360/description
@@ -93,16 +176,13 @@ endef
 
 $(eval $(call KernelPackage,hwmon-pc87360))
 
+
 define KernelPackage/hwmon-w83627hf
-$(call KernelPackage/hwmon/Depends,@TARGET_rdc||TARGET_x86)
   TITLE:=Winbond W83627HF monitoring support
-  KCONFIG:= \
-	CONFIG_SENSORS_W83627HF \
-	CONFIG_HWMON_VID
-  FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/hwmon/w83627hf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hwmon-vid w83627hf)
+  KCONFIG:=CONFIG_SENSORS_W83627HF
+  FILES:=$(LINUX_DIR)/drivers/hwmon/w83627hf.ko
+  AUTOLOAD:=$(call AutoLoad,50,w83627hf)
+$(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86 +kmod-hwmon-vid)
 endef
 
 define KernelPacakge/hwmon-w83627hf/description

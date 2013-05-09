@@ -1,8 +1,8 @@
 /*      $OpenBSD: criov.c,v 1.9 2002/01/29 15:48:29 jason Exp $	*/
 
 /*
- * Linux port done by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2006-2007 David McCullough
+ * Linux port done by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2006-2010 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
@@ -34,7 +34,8 @@
 __FBSDID("$FreeBSD: src/sys/opencrypto/criov.c,v 1.5 2006/06/04 22:15:13 pjd Exp $");
  */
 
-#ifndef AUTOCONF_INCLUDED
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
 #include <linux/config.h>
 #endif
 #include <linux/module.h>
@@ -142,7 +143,6 @@ EXPORT_SYMBOL(cuio_copyback);
 EXPORT_SYMBOL(cuio_copydata);
 EXPORT_SYMBOL(cuio_getptr);
 
-
 static void
 skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)
 {
@@ -155,7 +155,7 @@ skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)
 	offset -= skb_headlen(skb);
 	for (i = 0; len > 0 && i < skb_shinfo(skb)->nr_frags; i++) {
 		if (offset < skb_shinfo(skb)->frags[i].size) {
-			memcpy(page_address(skb_shinfo(skb)->frags[i].page) +
+			memcpy(page_address(skb_frag_page(&skb_shinfo(skb)->frags[i])) +
 					skb_shinfo(skb)->frags[i].page_offset,
 					cp, min_t(int, skb_shinfo(skb)->frags[i].size, len));
 			len -= skb_shinfo(skb)->frags[i].size;

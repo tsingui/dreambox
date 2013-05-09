@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -28,7 +28,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git/bzr/hg checkouts - useful for mirror support
+# code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
 dl_pack/bz2=$(TAR) cfj $(1) $(2)
 dl_pack/gz=$(TAR) cfz $(1) $(2)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
@@ -45,7 +45,7 @@ define DownloadMethod/default
 endef
 
 define wrap_mirror
-	$(if $(MIRROR),@$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "x" || ( $(1) ),$(1))
+	$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_MD5SUM))),@$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_MD5SUM)" || ( $(1) ),$(1))
 endef
 
 define DownloadMethod/cvs
@@ -87,7 +87,7 @@ define DownloadMethod/git
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		git clone $(URL) $(SUBDIR) && \
+		git clone $(URL) $(SUBDIR) --recursive && \
 		(cd $(SUBDIR) && git checkout $(VERSION)) && \
 		echo "Packing checkout..." && \
 		rm -rf $(SUBDIR)/.git && \
@@ -128,11 +128,28 @@ define DownloadMethod/hg
 	)
 endef
 
+define DownloadMethod/darcs
+	$(call wrap_mirror, \
+		echo "Checking out files from the darcs repository..."; \
+		mkdir -p $(TMP_DIR)/dl && \
+		cd $(TMP_DIR)/dl && \
+		rm -rf $(SUBDIR) && \
+		[ \! -d $(SUBDIR) ] && \
+		darcs get -t $(VERSION) $(URL) $(SUBDIR) && \
+		find $(SUBDIR) -name _darcs | xargs rm -rf && \
+		echo "Packing checkout..." && \
+		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		rm -rf $(SUBDIR); \
+	)
+endef
+
 Validate/cvs=VERSION SUBDIR
 Validate/svn=VERSION SUBDIR
 Validate/git=VERSION SUBDIR
 Validate/bzr=VERSION SUBDIR
 Validate/hg=VERSION SUBDIR
+Validate/darcs=VERSION SUBDIR
 
 define Download/Defaults
   URL:=
@@ -141,6 +158,7 @@ define Download/Defaults
   MD5SUM:=
   SUBDIR:=
   MIRROR:=1
+  MIRROR_MD5SUM:=x
   VERSION:=
 endef
 

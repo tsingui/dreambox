@@ -1,6 +1,6 @@
 define Profile/EASY50812
-  NAME:=EASY50812
-  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-leds-gpio
+  NAME:=EASY50812 - Eval Board
+  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg
 endef
 
 define Profile/EASY50812/Description

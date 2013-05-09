@@ -86,18 +86,10 @@ menuconfig TOOLCHAINOPTS
 	bool "Toolchain Options"  if DEVEL
 	depends NEED_TOOLCHAIN
 
-config EABI_SUPPORT
-	bool
-	depends arm||armeb
-	prompt "Enable EABI support" if TOOLCHAINOPTS
-	default n if TARGET_gemini
-	default y
-	help
-	  Enable ARM EABI support
-
 menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
+	depends !sparc
 	default y	if powerpc64
 	default n
 	help
@@ -150,17 +142,12 @@ choice
 		bool "Use eglibc"
 		depends !avr32
 	
-	config USE_GLIBC
-		bool "Use glibc"
-		depends !avr32
-	
 	config USE_UCLIBC
 		bool "Use uClibc"
 
 endchoice
 
 source "toolchain/eglibc/Config.in"
-source "toolchain/glibc/Config.in"
 source "toolchain/uClibc/Config.in"
 
 comment "Debuggers"
@@ -168,8 +155,9 @@ comment "Debuggers"
 
 config GDB
 	bool
+	depends !avr32
 	prompt "Build gdb" if TOOLCHAINOPTS
-	default n
+	default y
 	help
 		Enable if you want to build the gdb
 
@@ -183,30 +171,30 @@ config INSIGHT
 
 config USE_UCLIBC
 	bool
-	default y if !TOOLCHAINOPTS
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+
+config USE_EXTERNAL_LIBC
+	bool
+	default y if EXTERNAL_TOOLCHAIN || NATIVE_TOOLCHAIN
 
 source "toolchain/gcc/Config.version"
 
 source "toolchain/eglibc/Config.version"
-source "toolchain/glibc/Config.version"
 source "toolchain/uClibc/Config.version"
 
 config LIBC
 	string
 	default "eglibc"  if USE_EGLIBC
-	default "glibc"   if USE_GLIBC
 	default "uClibc"  if USE_UCLIBC
 
 config LIBC_VERSION
 	string
 	default EGLIBC_VERSION  if USE_EGLIBC
-	default GLIBC_VERSION   if USE_GLIBC
 	default UCLIBC_VERSION  if USE_UCLIBC
 
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && EABI_SUPPORT
-	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !EABI_SUPPORT
-	default "uclibcgnueabi"   if USE_UCLIBC && EABI_SUPPORT
-	default "uclibc"          if USE_UCLIBC && !EABI_SUPPORT
-
+	default "gnueabi"         if (USE_EGLIBC) && (arm || armeb)
+	default "gnu"             if (USE_EGLIBC) && !(arm || armeb)
+	default "uclibcgnueabi"   if USE_UCLIBC && (arm || armeb)
+	default "uclibc"          if USE_UCLIBC && !(arm || armeb)

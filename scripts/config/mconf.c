@@ -872,6 +872,8 @@ static void show_help(struct menu *menu)
 	struct gstr help = str_new();
 	struct symbol *sym = menu->sym;
 
+	help.max_width = cols - 10;
+
 	if (sym->help)
 	{
 		if (sym->name) {
@@ -1084,7 +1086,7 @@ int main(int ac, char **av)
 
 	sym = sym_lookup("OPENWRTVERSION", 0);
 	sym_calc_value(sym);
-	sprintf(menu_backtitle, _("DreamBox %s Configuration"),
+	sprintf(menu_backtitle, _("OpenWrt %s Configuration"),
 		sym_get_string_value(sym));
 
 	mode = getenv("MENUCONFIG_MODE");

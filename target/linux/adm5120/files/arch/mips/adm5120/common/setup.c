@@ -20,10 +20,12 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/io.h>
+#include <linux/reboot.h>
+#include <linux/time.h>
 
-#include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
+#include <asm/bootinfo.h>
 #include <asm/mips_machine.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
@@ -49,7 +51,7 @@ static void __init adm5120_report(void)
 {
 	printk(KERN_INFO "SoC      : %s\n", adm5120_sys_type);
 	printk(KERN_INFO "Bootdev  : %s flash\n",
-		adm5120_nand_boot ? "NAND":"NOR");
+		adm5120_nand_boot ? "NAND" : "NOR");
 	printk(KERN_INFO "Prom     : %s\n", prom_names[adm5120_prom_type]);
 }
 
@@ -107,7 +109,7 @@ static int __init adm5120_board_setup(void)
 {
 	adm5120_gpio_init();
 
-	mips_machine_setup(mips_machtype);
+	mips_machine_setup();
 
 	return 0;
 }
@@ -122,5 +124,5 @@ static void __init adm5120_generic_board_setup(void)
 	adm5120_add_device_switch(6, NULL);
 }
 
-MIPS_MACHINE(MACH_ADM5120_GENERIC, "Generic ADM5120 board",
-		adm5120_generic_board_setup);
+MIPS_MACHINE(MACH_ADM5120_GENERIC, "Generic", "Generic ADM5120 board",
+	     adm5120_generic_board_setup);

@@ -2,10 +2,9 @@ source "tmp/.config-target.in"
 
 # Kernel/Hardware features
 
-config LINUX_2_4
-	bool
-
-config LINUX_2_6
+config HAS_SPE_FPU
+	depends powerpc
+	select HAS_FPU
 	bool
 
 config HAS_FPU
@@ -31,6 +30,12 @@ config USB_SUPPORT
 	select AUDIO_SUPPORT
 	bool
 
+config USB_GADGET_SUPPORT
+	bool
+
+config RTC_SUPPORT
+	bool
+
 config BIG_ENDIAN
 	bool
 
@@ -43,7 +48,7 @@ config USES_SQUASHFS
 config USES_JFFS2
 	bool
 
-config USES_EXT2
+config USES_EXT4
 	bool
 
 config USES_TARGZ

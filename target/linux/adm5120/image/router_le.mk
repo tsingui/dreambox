@@ -210,6 +210,14 @@ define Image/Build/Template/Infineon/Initramfs
 endef
 
 #
+# Generic EB-214A
+#
+define Image/Build/Template/Edimax/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,eb-214a,bin)
+endef
+
+
+#
 # Mikrotik RouterBOARD 1xx
 #
 define Image/Build/Template/Mikrotik/Initramfs
@@ -381,6 +389,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/Profile/BR6104KP,$(1))
 	$(call Image/Build/Profile/BR6104WG,$(1))
 	$(call Image/Build/Profile/BR6114WG,$(1))
+	$(call Image/Build/Profile/EB214A,$(1))
 	# Infineon
 	$(call Image/Build/Profile/EASY83000,$(1))
 	$(call Image/Build/Profile/EASY5120RT,$(1))
@@ -390,23 +399,3 @@ define Image/Build/Profile/Generic
 
 	$(call Image/Build/Experimental,$(1))
 endef
-
-ifeq ($(PROFILE),RouterBoard)
-  define Image/cmdline/yaffs2
-	root=/dev/mtdblock3 rootfstype=yaffs2
-  endef
-
-  define Image/BuildKernel/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(call imgname,kernel,rb1xx)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(call imgname,kernel,rb1xx) \
-		'$(strip $(call Image/cmdline/yaffs2))'
-  endef
-
-  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-    define Image/BuildKernel
-	$(call Image/BuildKernel/RouterBoard)
-    endef
-  endif
-
-endif
-

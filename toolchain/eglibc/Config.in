@@ -1,31 +1,21 @@
 choice
-	prompt "eglibc version" 
+	prompt "eglibc version"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default EGLIBC_VERSION_2_8
+	default EGLIBC_VERSION_2_15
 	help
 	  Select the version of eglibc you wish to use.
 
-	config EGLIBC_VERSION_2_6
-		bool "eglibc 2.6"
+	config EGLIBC_VERSION_2_13
+		bool "eglibc 2.13"
+		depends !GCC_VERSION_LLVM
 
-	config EGLIBC_VERSION_2_7
-		bool "eglibc 2.7"
+	config EGLIBC_VERSION_2_14
+		bool "eglibc 2.14"
+		depends !GCC_VERSION_LLVM
 
-	config EGLIBC_VERSION_2_8
-		bool "eglibc 2.8"
-
-	config EGLIBC_VERSION_2_9
-		bool "eglibc 2.9"
-
-	config EGLIBC_VERSION_2_10
-		bool "eglibc 2.10"
-
-	config EGLIBC_VERSION_2_11
-		bool "eglibc 2.11"
-		depends GCC_VERSION_4_3 || GCC_VERSION_4_4
-
-	config EGLIBC_VERSION_TRUNK
-		bool "eglibc trunk"
+	config EGLIBC_VERSION_2_15
+		bool "eglibc 2.15"
+		depends !GCC_VERSION_LLVM
 
 endchoice
 
@@ -33,17 +23,12 @@ config EGLIBC_REVISION
 	string
 	prompt "eglibc revision"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default "5887"  if EGLIBC_VERSION_2_6
-	default "8588"  if EGLIBC_VERSION_2_7
-	default "8587"  if EGLIBC_VERSION_2_8
-	default "8690"  if EGLIBC_VERSION_2_9
-	default "9289"  if EGLIBC_VERSION_2_10
-	default "9306"  if EGLIBC_VERSION_2_11
-	default "HEAD"  if EGLIBC_VERSION_TRUNK
+	default "15508" if EGLIBC_VERSION_2_13
+	default "16488" if EGLIBC_VERSION_2_14
+	default "18909" if EGLIBC_VERSION_2_15
 	default ""
 
 menu "eglibc configuration"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
 	source toolchain/eglibc/config/Config.in
 endmenu
-

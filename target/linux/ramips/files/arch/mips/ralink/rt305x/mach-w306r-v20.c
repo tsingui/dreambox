@@ -40,13 +40,12 @@ static struct gpio_led w306r_v20_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button w306r_v20_gpio_buttons[] __initdata = {
+static struct gpio_keys_button w306r_v20_gpio_buttons[] __initdata = {
 	{
 		.desc		= "RESET/WPS",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = W306R_V20_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = W306R_V20_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= W306R_V20_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}

@@ -19,7 +19,7 @@ choice
 	
 	config VOICE_VMMC_WITH_DEVICE_FALCON
 		bool "FALC-ON"
-		depends on TARGET_lantiq_falcon
+		depends on (TARGET_lantiq_falcon||TARGET_lantiq_falcon_stable)
 
 endchoice
 

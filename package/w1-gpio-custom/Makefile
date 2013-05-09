@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=w1-gpio-custom
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -17,7 +17,7 @@ define KernelPackage/w1-gpio-custom
   SUBMENU:=W1 support
   TITLE:=Custom GPIO-based 1-wire device
   DEPENDS:=kmod-w1 +kmod-w1-master-gpio
-  FILES:=$(PKG_BUILD_DIR)/w1-gpio-custom.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/w1-gpio-custom.ko
   KCONFIG:=
 endef
 

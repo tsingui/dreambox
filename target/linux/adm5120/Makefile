@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=adm5120
 BOARDNAME:=Infineon/ADMtek ADM5120
-LINUX_VERSION:=2.6.32.27
-SUBTARGETS:=router_le router_be
+LINUX_VERSION:=3.3.8
+SUBTARGETS:=router_le router_be rb1xx
 INITRAMFS_EXTRA_FILES:=
 
 include $(INCLUDE_DIR)/target.mk

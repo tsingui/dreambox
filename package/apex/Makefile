@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apex
-PKG_VERSION:=1.5.14
-PKG_RELEASE:=3
+PKG_VERSION:=1.6.9
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.buici.com/pub/apex/ \
 	ftp://metalab.unc.edu/pub/Linux/system/boot/apex/
-PKG_MD5SUM:=22fb46e76c8221c7bcc9734602367460
+PKG_MD5SUM:=9606cf2e3fd2c9a86fe0b61388509a30
 PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,7 +34,6 @@ define build_apex
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=arm \
 		$(1)_config
-	$(SED) 's,.*CONFIG_AEABI.*,$(if $(CONFIG_EABI_SUPPORT),CONFIG_AEABI=y,# CONFIG_AEABI is not set),' $(PKG_BUILD_DIR)/.config
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		KBUILD_HAVE_NLS=no \

@@ -1,16 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 
 pkg_dir=$1
 
 if [ -z $pkg_dir ] || [ ! -d $pkg_dir ]; then
-	echo "Usage: ipkg-make-index <package_directory>"
+	echo "Usage: ipkg-make-index <package_directory>" >&2
 	exit 1
 fi
 
-which md5sum 2>&1 >/dev/null || alias md5sum=md5
+which md5sum >/dev/null 2>&1 || alias md5sum=md5
 
 for pkg in `find $pkg_dir -name '*.ipk' | sort`; do
+	name="${pkg##*/}"
+	name="${name%%_*}"
+	[[ "$name" = "kernel" ]] && continue
+	[[ "$name" = "libc" ]] && continue
 	echo "Generating index for package $pkg" >&2
 	file_size=$(ls -l $pkg | awk '{print $5}')
 	md5sum=$(md5sum $pkg | awk '{print $1}')

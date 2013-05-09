@@ -40,21 +40,19 @@ static struct gpio_led nbg_419n_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button nbg_419n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button nbg_419n_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = NBG_419N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = NBG_419N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NBG_419N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-//		.debounce_interval = NBG_419N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = NBG_419N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NBG_419N_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}

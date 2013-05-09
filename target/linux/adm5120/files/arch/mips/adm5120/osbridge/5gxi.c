@@ -20,7 +20,6 @@
 #include <asm/mach-adm5120/adm5120_platform.h>
 #include <asm/mach-adm5120/adm5120_info.h>
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition osbridge_5gxi_partitions[] = {
 	{
 		.name	= "bootloader",
@@ -37,7 +36,6 @@ static struct mtd_partition osbridge_5gxi_partitions[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct gpio_led osbridge_5gxi_gpio_leds[] __initdata = {
 	GPIO_LED_INV(ADM5120_GPIO_PIN6, "5gxi:green:user",	NULL),
@@ -54,10 +52,8 @@ static u8 osbridge_5gxi_vlans[6] __initdata = {
 
 static void __init osbridge_5gxi_setup(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(osbridge_5gxi_partitions);
 	adm5120_flash0_data.parts = osbridge_5gxi_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 
 	adm5120_add_device_uart(0);
 	adm5120_add_device_uart(1);
@@ -71,5 +67,5 @@ static void __init osbridge_5gxi_setup(void)
 				osbridge_5gxi_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_5GXI, "OSBRiDGE 5GXi/5XLi board",
+MIPS_MACHINE(MACH_ADM5120_5GXI, "5GXi", "OSBRiDGE 5GXi/5XLi board",
 	     osbridge_5gxi_setup);

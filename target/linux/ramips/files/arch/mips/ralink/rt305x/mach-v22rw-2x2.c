@@ -39,21 +39,19 @@ static struct gpio_led v22rw_2x2_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button v22rw_2x2_gpio_buttons[] __initdata = {
+static struct gpio_keys_button v22rw_2x2_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = V22RW_2X2_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = V22RW_2X2_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= V22RW_2X2_GPIO_BUTTON_SWRST,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-//		.debounce_interval = V22RW_2X2_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = V22RW_2X2_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= V22RW_2X2_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}

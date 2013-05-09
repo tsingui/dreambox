@@ -10,11 +10,11 @@
  */
 
 #include <linux/types.h>
-#include <linux/autoconf.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/string.h>
 #include <linux/module.h>
+#include <linux/routerboot.h>
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>

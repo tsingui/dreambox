@@ -13,14 +13,11 @@ PKG_SOURCE_URL:=ftp://gcc.gnu.org/pub/gcc/infrastructure
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_MD5SUM:=e7dd265afdeaea81f7e87a72b182d875
 
+HOST_FIXUP:=autoreconf
+
 include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
-
-ifeq ($(HOST_OS),Darwin)
-  GNU_HOST_NAME:=
-  HOST_CONFIGURE_ARGS:=$(filter-out --target= --build= --host=,$(HOST_CONFIGURE_ARGS))
-endif
 
 HOST_CONFIGURE_ARGS += \
 	--enable-static \

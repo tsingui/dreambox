@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,14 +10,17 @@ ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci usb pcmcia
-CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -funit-at-a-time
+CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -fno-caller-saves
+MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-mini kmod-r6040 kmod-input-core \
-		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+DEFAULT_PACKAGES += kmod-llc kmod-stp kmod-bridge kmod-8021q \
+		    wpad-mini kmod-libphy kmod-r6040 kmod-input-core \
+		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug \
+		    kmod-rdc321x-wdt
 
 define Target/Description
         Build firmware images for RDC321x based routers

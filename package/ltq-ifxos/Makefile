@@ -22,7 +22,7 @@ define KernelPackage/ltq-ifxos
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq
-  DEPENDS:=@TARGET_lantiq @!TARGET_lantiq_ase
+  DEPENDS:=@TARGET_lantiq
   FILES:=$(PKG_BUILD_DIR)/src/drv_ifxos.ko
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
 endef

@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 
 /* defaults: Level One WAP-0007 */
@@ -32,29 +31,22 @@ static char *ascii1 = "DDC_RUS001";
 static char *ascii2 = "Queen";
 
 static struct hdrinfo {
-	char *name;
+  char *name;
 	unsigned long unknown; /* can probably be any number, maybe version number */
 	int topalign;
 	unsigned int addr;
 	unsigned int size;
-	char *help;
 } hdrinfo[] = {
-	{ "bios", 0xc76be111, 1, 0x3fa000, 0x006000, "RDC-BIOS" },
-	{ "recovery", 0xc76be222, 0, 0x3f0000, 0x004000, "Recovery Loader" },
-	{ "linux", 0xc76bee9d, 0, 0x000000, 0x100000, "Linux kernel" },
-	{ "ramdisk", 0xc76bee9d, 0, 0x100000, 0x280000, "rootfs ramdisk" },
-	{ "amitcfg", 0xc76bee8b, 0, 0x380000, 0x030000, "AMIT configuration data" },
-	{ "amitfs", 0xc76bee8b, 0, 0x3b0000, 0x40000, "AMIT filesystem" },
-	{ "redboot", 0x00000000, 1, 0x3d0000, 0x030000, "Redboot 128kB image" },
-	{ "redbootlow", 0, 0, 0x3e0000, 0x18000, "Redboot (low part)" },
-	{ "redboothigh", 0, 0, 0x3fa000, 0x6000, "Redboot (high part)" },
-	{ "kernel", 0, 1, 0x000000, 0x100000, "openwrt kernel" },
-	{ "rootfs", 0, 1, 0x100000, 0x280000, "openwrt rootfs" },
-	{ "fullflash", 0, 1, 0x000000, 0x400000, "fullflash" },
-/*  removed, because the 16 Byte long header in Flash is not compatible
-    with jffs2 which needs all of the sector.
-	{ "openmgbcfg", 0, 0, 0x370000, 0x070000, "OpenMGB config (jffs2)" },
-*/
+	{ "bios", 0xc76be111, 1, 0x3fa000, 0x006000 },        /* BIOS */
+	{ "recovery", 0xc76be222, 0, 0x3f0000, 0x004000 },    /* Recovery Loader */
+	{ "linux", 0xc76bee9d, 0, 0x000000, 0x100000 },       /* Linux */
+	{ "ramdisk", 0xc76bee9d, 0, 0x100000, 0x280000 },     /* ramdisk */
+	{ "amitconfig", 0xc76bee8b, 0, 0x380000, 0x060000 },  /* AMIT config */
+	{ "redboot", 0x00000000, 1, 0x3d0000, 0x030000 },     /* Redboot 128kB image */
+	{ "redbootlow", 0, 0, 0x3e0000, 0x18000 },            /* Redboot 1. part */
+	{ "redboothigh", 0, 0, 0x3fa000, 0x6000 },            /* Redboot 2. part */
+	{ "linux3g", 0xcb5f06b5, 0, 0x000000, 0x100000 },       /* Linux */
+	{ "ramdisk3g", 0xcb5f06b5, 0, 0x100000, 0x280000 },     /* ramdisk */
 	{ NULL }
 };
 
@@ -186,7 +178,7 @@ void makehdr(unsigned char *hdr, struct hdrinfo *info,
 	COPY_LONG(hdr, 0x40, 0x01014842);
 	COPY_LONG(hdr, 0x44, last ? 0x01050050 : 0x01000050);
 	COPY_LONG(hdr, 0x48, info->addr);
-	COPY_SHORT(hdr, 0x4c, 0x000b);
+	COPY_SHORT(hdr, 0x4c, info->unknown == 0xcb5f06b5 ? 0x0016 : 0x000b);
 	COPY_SHORT(hdr, 0x0e, checksum(data, size));
 	COPY_SHORT(hdr, 0x4e, ~checksum(hdr, HDRSIZE));
 }
@@ -234,35 +226,6 @@ struct hdrinfo *find_hdrinfo(const char *name)
 	return NULL;
 }
 
-struct hdrinfo *mk_hdrinfo(const char *addr, unsigned int hint)
-{
-	static struct hdrinfo info;
-	char *end;
-	int n;
-	memset(&info, 0, sizeof(info));
-	if (!isdigit(addr[0]) && addr[0] != ',')
-		return NULL;
-	end = strchr(addr, ',');
-	if (end != NULL)
-		*end++ = '\0';
-	n = sscanf(addr, "0x%x", &info.addr) == 1;
-	if (!n)
-		n = sscanf(addr, "%d", &info.addr) == 1;
-	if (!n)
-		n = (info.addr = hint) != 0;
-	if (!n)
-		return NULL;
-	if (end != NULL) {
-		n = sscanf(end, "0x%x", &info.size) == 1;
-		if (!n)
-			n = sscanf(end, "%d", &info.size) == 1;
-		if (!n)
-			return NULL;
-		info.size -= info.addr;
-	}
-	return &info;
-}
-
 void oferror(FILE *f)
 {
 	printf("file error\n");
@@ -271,20 +234,12 @@ void oferror(FILE *f)
 
 void showhelp(void)
 {
-	int n;
-	printf("Syntax: makeamitbin [options] addrspec|type part addrspec|type part ...\n");
+	printf("Syntax: makeamitbin [options]\n");
 	printf("Options:\n");
 	printf("  -1 ID1\tFirmware identifier 1, e.g. 'DDC_RUS001' for manufacturer LevelOne\n");
 	printf("  -2 ID2\tFirmware identifier 2, 'Queen' in all known cases\n");
 	printf("  -o FILE\tOutput file\n");
 	printf("  -ids\t\tShow a list of known firmware identifiers.\n");
-	printf("\n");
-	printf("Type/Parts:\n");
-	printf("  type is one of these:\n");
-	for (n = 0; hdrinfo[n].name != NULL ; n++) {
-		printf("     %s\t\t%s\n", hdrinfo[n].name, hdrinfo[n].help);
-	}
-	printf("  part is the path to the file containing this firmware part.\n");
 	exit(1);
 }
 
@@ -313,7 +268,6 @@ int main(int argc, char *argv[])
 	struct hdrinfo *info;
 	long size;
 	int last = 0;
-	unsigned int lastaddr = 0;
 	int n;
 	for (n = 1; n < argc; n++)
 	{
@@ -339,19 +293,14 @@ int main(int argc, char *argv[])
 			if (n >= argc)
 				showhelp();
 			last = ((n + 1) >= argc);		/* dirty, options first! */
-			info = mk_hdrinfo(type, lastaddr);
-			if (info == NULL)
-				info = find_hdrinfo(type);
+			info = find_hdrinfo(type);
 			if (info == NULL)
 				showhelp();
 			data = read_file(argv[n], &size);
 			if (data == NULL)
 				showhelp();
-			if (info->size == 0)
-				info->size = (size + 0xffff) & 0xffff0000;
 			makehdr(hdr, info, data, size, last);
 			/* showhdr(hdr); */
-			lastaddr = info->addr + info->size;
 			if (fwrite(hdr, HDRSIZE, 1, of) != 1)
 				oferror(of);
 			if (fwrite(data, size, 1, of) != 1)

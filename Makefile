@@ -24,6 +24,8 @@ ifneq ($(OPENWRT_BUILD),1)
 
   override OPENWRT_BUILD=1
   export OPENWRT_BUILD
+  GREP_OPTIONS=
+  export GREP_OPTIONS
   include $(TOPDIR)/include/debug.mk
   include $(TOPDIR)/include/depends.mk
   include $(TOPDIR)/include/toplevel.mk
@@ -44,9 +46,8 @@ $(package/stamp-install): $(package/stamp-compile)
 $(package/stamp-rootfs-prepare): $(package/stamp-install)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare)
 
-$(BUILD_DIR)/.prepared: Makefile
-	@mkdir -p $$(dirname $@)
-	@touch $@
+printdb:
+	@true
 
 prepare: $(target/stamp-compile)
 
@@ -58,6 +59,11 @@ dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
 	rm -rf $(TMP_DIR)
 
+ifndef DUMP_TARGET_DB
+$(BUILD_DIR)/.prepared: Makefile
+	@mkdir -p $$(dirname $@)
+	@touch $@
+
 tmp/.prereq_packages: .config
 	unset ERROR; \
 	for package in $(sort $(prereq-y) $(prereq-m)); do \
@@ -68,9 +74,16 @@ tmp/.prereq_packages: .config
 		false; \
 	fi
 	touch $@
+endif
 
 # check prerequisites before starting to build
 prereq: $(target/stamp-prereq) tmp/.prereq_packages
+	@if [ ! -f "$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)" ]; then \
+		echo 'ERROR: Missing site config for target "$(REAL_GNU_TARGET_NAME)" !'; \
+		echo '       The missing file will cause configure scripts to fail during compilation.'; \
+		echo '       Please provide a "$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)" file and restart the build.'; \
+		exit 1; \
+	fi
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
 world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE

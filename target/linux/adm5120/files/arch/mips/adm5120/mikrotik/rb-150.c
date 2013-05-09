@@ -20,7 +20,7 @@
 #define RB150_GPIO_NAND_ALE	ADM5120_GPIO_P3L2
 #define RB150_GPIO_RESET_BUTTON	ADM5120_GPIO_PIN1 /* FIXME */
 
-#define RB150_GPIO_DEV_MASK	( 1 << RB150_GPIO_NAND_READY	\
+#define RB150_GPIO_DEV_MASK	(1 << RB150_GPIO_NAND_READY	\
 				| 1 << RB150_GPIO_NAND_NCE	\
 				| 1 << RB150_GPIO_NAND_CLE	\
 				| 1 << RB150_GPIO_NAND_ALE)
@@ -133,4 +133,5 @@ static void __init rb150_setup(void)
 	adm5120_add_device_switch(5, rb150_vlans);
 }
 
-MIPS_MACHINE(MACH_ADM5120_RB_150, "Mikrotik RouterBOARD 150", rb150_setup);
+MIPS_MACHINE(MACH_ADM5120_RB_150, "miniROUTER", "Mikrotik RouterBOARD 150",
+	     rb150_setup);

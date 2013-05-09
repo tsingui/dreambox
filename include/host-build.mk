@@ -7,6 +7,20 @@
 
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
+HOST_BUILD_PARALLEL ?=
+
+ifneq ($(CONFIG_PKG_BUILD_USE_JOBSERVER),)
+  HOST_MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) -j)
+else
+  HOST_MAKE_J:=-j$(CONFIG_PKG_BUILD_JOBS)
+endif
+
+ifeq ($(strip $(HOST_BUILD_PARALLEL)),0)
+HOST_JOBS?=-j1
+else
+HOST_JOBS?=$(if $(HOST_BUILD_PARALLEL)$(CONFIG_PKG_DEFAULT_PARALLEL),\
+	$(if $(CONFIG_PKG_BUILD_PARALLEL),$(HOST_MAKE_J),-j1),-j1)
+endif
 
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
@@ -37,8 +51,9 @@ define Host/Prepare
 endef
 
 HOST_CONFIGURE_VARS = \
+	CC="$(HOSTCC)" \
 	CFLAGS="$(HOST_CFLAGS)" \
-	CPPFLAGS="$(HOST_CFLAGS)" \
+	CPPFLAGS="$(HOST_CPPFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
 	SHELL="$(BASH)"
 
@@ -51,12 +66,21 @@ HOST_CONFIGURE_ARGS = \
 	--prefix=$(STAGING_DIR_HOST) \
 	--exec-prefix=$(STAGING_DIR_HOST) \
 	--sysconfdir=$(STAGING_DIR_HOST)/etc \
-	--localstatedir=$(STAGING_DIR_HOST)/var
+	--localstatedir=$(STAGING_DIR_HOST)/var \
+	--sbindir=$(STAGING_DIR_HOST)/bin
+
+HOST_MAKE_FLAGS =
 
 HOST_CONFIGURE_CMD = ./configure
 
+ifneq ($(HOST_OS),Darwin)
+  ifeq ($(CONFIG_BUILD_STATIC_TOOLS),y)
+    HOST_STATIC_LINKING = -static
+  endif
+endif
+
 define Host/Configure/Default
-	(cd $(HOST_BUILD_DIR)/$(3); \
+	$(if $(HOST_CONFIGURE_PARALLEL),+)(cd $(HOST_BUILD_DIR)/$(3); \
 		if [ -x configure ]; then \
 			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
 			$(2) \
@@ -73,7 +97,9 @@ define Host/Configure
 endef
 
 define Host/Compile/Default
-	$(MAKE) -C $(HOST_BUILD_DIR) $(1)
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
+		$(HOST_MAKE_FLAGS) \
+		$(1)
 endef
 
 define Host/Compile
@@ -103,6 +129,7 @@ define Download/default
   SUBDIR:=$(PKG_SOURCE_SUBDIR)
   VERSION:=$(PKG_SOURCE_VERSION)
   MD5SUM:=$(PKG_MD5SUM)
+  MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM)
 endef
 
 define Host/Exports/Default
@@ -112,6 +139,8 @@ define Host/Exports/Default
   $(1) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
 endef
 Host/Exports=$(Host/Exports/Default)
+
+.NOTPARALLEL:
 
 ifndef DUMP
   define HostBuild
@@ -145,6 +174,7 @@ ifndef DUMP
     install: host-install
     clean: host-clean
     update: host-update
+    refresh: host-refresh
 
     $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
 		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
@@ -152,13 +182,13 @@ ifndef DUMP
 		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
 		touch $$@
 
-    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
+    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
 		$(call Host/Install)
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $$@
   else
-    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED) $(if $(FORCE_HOST_INSTALL),FORCE)
 		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
 		$(call Host/Compile)
 		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
@@ -184,4 +214,3 @@ ifndef DUMP
   clean:
 
 endif
-

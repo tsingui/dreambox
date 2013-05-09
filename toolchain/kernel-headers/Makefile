@@ -22,6 +22,7 @@ HOST_BUILD_DIR:=$(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 PKG_MD5SUM:=$(LINUX_KERNEL_MD5SUM)
 LINUX_DIR := $(HOST_BUILD_DIR)
 FILES_DIR := 
+PATCH_DIR := ./patches$(if $(wildcard ./patches-$(LINUX_VERSION)),-$(LINUX_VERSION))
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
@@ -30,100 +31,73 @@ ifeq ($(strip $(BOARD)),uml)
   LINUX_KARCH:=$(subst x86_64,x86,$(subst i386,x86,$(ARCH)))
 endif
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
-  LINUX_HAS_HEADERS_INSTALL:=y
-endif
+HOST_EXTRACFLAGS=
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
-  LINUX_ASM_INCLUDES:=arch/$(LINUX_KARCH)/include/asm
-else
-  LINUX_ASM_INCLUDES:=include/asm
-endif
+LINUX_HAS_HEADERS_INSTALL:=y
 
 KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
+	HOSTCFLAGS="$(HOST_CFLAGS) -Wall -Wmissing-prototypes -Wstrict-prototypes" \
 	ARCH=$(LINUX_KARCH) \
+	CC="$(KERNEL_CC)" \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	CROSS_COMPILE=$(TARGET_CROSS) \
 	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL=$(BASH)
 
-define Host/Prepare/pre/powerpc
-	if [ -d $(HOST_BUILD_DIR)/include/asm-ppc ]; then \
-		mkdir -p $(PKG_BUILD_DIR)/include/asm-powerpc/; \
-		$(CP) $(HOST_BUILD_DIR)/include/asm-ppc/* $(HOST_BUILD_DIR)/include/asm-powerpc/; \
-		rm -rf $(HOST_BUILD_DIR)/include/asm-ppc; \
-		ln -s $(HOST_BUILD_DIR)/include/asm-powerpc $(HOST_BUILD_DIR)/include/asm-ppc; \
-	fi
+define Host/Configure/all
+	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev
+	$(KMAKE) \
+		INSTALL_HDR_PATH="$(BUILD_DIR_TOOLCHAIN)/linux-dev/" \
+		headers_install
 endef
 
-ifneq ($(LINUX_HAS_HEADERS_INSTALL),)
-  define Host/Prepare/all
-	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr
-	$(KMAKE) \
-		CROSS_COMPILE=$(TARGET_CROSS) \
-		INSTALL_HDR_PATH="$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/" \
-		headers_install
-  endef
-else
-  define Host/Prepare/all
-	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include
-	cp -pLR $(HOST_BUILD_DIR)/include/asm $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-	cp -pLR $(HOST_BUILD_DIR)/include/asm-generic $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-	cp -pLR $(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH) $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-	cp -pLR $(HOST_BUILD_DIR)/include/linux $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
+# XXX: the following is needed to build lzma-loader
+ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
+  define Host/Configure/lzma
+	$(CP) \
+		$(HOST_BUILD_DIR)/arch/mips/include/asm/asm.h \
+		$(HOST_BUILD_DIR)/arch/mips/include/asm/regdef.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/
   endef
 endif
 
-# XXX: the following is needed to build lzma-loader
-define Host/Prepare/lzma
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/asm-mips/asm.h \
-		$(HOST_BUILD_DIR)/include/asm-mips/regdef.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
-endef
-
-define Host/Prepare/post/cris
+define Host/Configure/post/cris
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/linux/user.h \
-		$(HOST_BUILD_DIR)/include/linux/autoconf.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
-	ln -snf $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch-v10/arch \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch
-	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/user.h
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/linux/
+	ln -snf $(BUILD_DIR_TOOLCHAIN)/linux-dev/include/arch-v10/arch \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/arch
+	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/user.h
 endef
 
-define Host/Prepare/post/ubicom32
+define Host/Configure/post/ubicom32
 	$(CP) \
 		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/elf.h \
 		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/user.h \
 		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page.h \
 		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page_offset.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/
 endef
 
-define Host/Prepare/post/mips
-	$(call Host/Prepare/lzma)
+define Host/Configure/post/mips
+	$(call Host/Configure/lzma)
 endef
 
-define Host/Prepare/post/mipsel
-	$(call Host/Prepare/lzma)
+define Host/Configure/post/mipsel
+	$(call Host/Configure/lzma)
 endef
 
 define Host/Prepare
 	$(call Kernel/Prepare/Default)
 	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
-	yes '' | $(KMAKE) oldconfig
-	$(KMAKE) include/linux/version.h $(LINUX_ASM_INCLUDES)
-	if [ -d $(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
-		$(CP) \
-			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
-			$(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH)/; \
-	fi
-	$(call Host/Prepare/pre/$(ARCH))
-	$(call Host/Prepare/all)
-	$(call Host/Prepare/post/$(ARCH))
 endef
 
 define Host/Configure
+	env
+	yes '' | $(KMAKE) oldconfig
+	$(call Host/Configure/all)
+	$(call Host/Configure/post/$(ARCH))
 endef
 
 define Host/Compile

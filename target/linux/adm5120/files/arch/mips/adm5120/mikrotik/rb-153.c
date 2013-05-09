@@ -11,9 +11,9 @@
 
 #include "rb-1xx.h"
 
-#define RB153_GPIO_DEV_MASK	( 1 << ADM5120_GPIO_PIN0 \
+#define RB153_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN0 \
 				| 1 << ADM5120_GPIO_PIN3 \
-				| 1 << ADM5120_GPIO_PIN4 )
+				| 1 << ADM5120_GPIO_PIN4)
 
 static struct resource rb153_cf_resources[] __initdata = {
 	{
@@ -71,4 +71,5 @@ static void __init rb153_setup(void)
 	adm5120_add_device_switch(5, rb153_vlans);
 }
 
-MIPS_MACHINE(MACH_ADM5120_RB_153, "Mikrotik RouterBOARD 153", rb153_setup);
+MIPS_MACHINE(MACH_ADM5120_RB_153, "150", "Mikrotik RouterBOARD 153",
+	     rb153_setup);

@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/libtool
 PKG_MD5SUM:=b32b04148ecdd7344abc6fe8bd1bb021
 
-PATCH_DIR:=$(TOPDIR)/tools/libtool/patches
+PKG_BUILD_PARALLEL:=0
 
 include $(INCLUDE_DIR)/package.mk
 

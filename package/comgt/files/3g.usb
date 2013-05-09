@@ -1,10 +1,6 @@
 #!/bin/sh
-
-. /etc/functions.sh
-
-log() {
-	logger -t 3g-hotplug "$@"
-}
+. /lib/functions.sh
+. /lib/netifd/netifd-proto.sh
 
 find_3g_iface() {
 	local cfg="$1"
@@ -14,21 +10,16 @@ find_3g_iface() {
 	config_get proto "$cfg" proto
 	[ "$proto" = 3g ] || return 0
 
-	local auto
-	config_get_bool auto "$cfg" auto 1
-	[ "$auto" = 1 ] || [ "$ACTION" = remove ] || return 0
-
-	local dev
-	config_get dev "$cfg" device
+	# bypass state vars here because 00-netstate could clobber .device
+	local dev=$(uci_get network "$cfg" device)
 
 	if [ "${dev##*/}" = "${tty##*/}" ]; then
 		if [ "$ACTION" = add ]; then
-			log "Starting interface $cfg for device ${dev##*/}"
-			( sleep 1; /sbin/ifup "$cfg" ) &
+			available=1
 		else
-			log "Stopping interface $cfg for device ${dev##*/}"
-			/sbin/ifdown "$cfg" &
+			available=0
 		fi
+		proto_set_available "$cfg" $available
 	fi
 }
 

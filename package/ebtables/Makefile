@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
-PKG_VERSION:=2.0.9-1
+PKG_VERSION:=2.0.10-4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/ebtables
-PKG_MD5SUM:=0e0c20adf2bba6d91dbd0b74a1a38c33
+PKG_MD5SUM:=506742a3d44b9925955425a659c1a8d0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)
 
@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ebtables
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Firewall
   DEPENDS:=+kmod-ebtables
   TITLE:=Ethernet bridge firewall administration utility
   URL:=http://ebtables.sourceforge.net/
@@ -29,6 +30,7 @@ endef
 
 define Package/ebtables-utils
   $(call Package/ebtables)
+  DEPENDS += ebtables
   TITLE:=ebtables save/restore utilities
 endef
 

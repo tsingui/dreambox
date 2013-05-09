@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,18 +8,19 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=0.9.8p
+PKG_VERSION:=1.0.1e
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
-	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
-	ftp://ftp.webmonster.de/pub/openssl/source/ \
+	ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.openssl.org/source \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=7f24047f70364c9eabc94899e356ce39
+PKG_MD5SUM:=66bf6f10f060d561929de96f9dfe5b8c
 
+PKG_LICENSE:=SSLEAY OPENSSL
+PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
-PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE
+PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -73,20 +74,33 @@ endef
 
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
-					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
+	no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
 OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic no-sse2
 
-ifdef CONFIG_OPENSSL_ENGINE
-  OPENSSL_OPTIONS += --with-cryptodev
+ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
+  OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
+  ifdef CONFIG_OPENSSL_ENGINE_DIGEST
+    OPENSSL_OPTIONS += -DUSE_CRYPTODEV_DIGESTS
+  endif
 else
   OPENSSL_OPTIONS += no-engines
 endif
 
-OPENSSL_OPTIONS += no-perlasm
+ifeq ($(CONFIG_x86_64),y)
+  OPENSSL_TARGET:=linux-x86_64
+else
+  OPENSSL_OPTIONS+=no-sse2
+  ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
+    OPENSSL_TARGET:=linux-mips-openwrt
+  else
+    OPENSSL_TARGET:=linux-generic-openwrt
+    OPENSSL_OPTIONS+=no-perlasm
+  endif
+endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
-		./Configure linux-openwrt \
+		./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
 			$(TARGET_CPPFLAGS) \
@@ -130,6 +144,7 @@ define Build/Compile
 		$(OPENSSL_MAKEFLAGS) \
 		do_linux-shared
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
 		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
 		$(OPENSSL_MAKEFLAGS) \
 		install
@@ -142,7 +157,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc $(1)/usr/lib/pkgconfig/
-	$(SED) 's#$(TARGET_LDFLAGS)##g' $(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
+	[ -n "$(TARGET_LDFLAGS)" ] && $(SED) 's#$(TARGET_LDFLAGS)##g' $(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc || true
 endef
 
 define Package/libopenssl/install

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,15 +9,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=button-hotplug
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/button-hotplug
   SUBMENU:=Other modules
   TITLE:=Button Hotplug driver
-  DEPENDS:=@LINUX_2_6
-  FILES:=$(PKG_BUILD_DIR)/button-hotplug.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/button-hotplug.ko
+  AUTOLOAD:=$(call AutoLoad,30,button-hotplug)
   KCONFIG:=
 endef
 

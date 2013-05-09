@@ -98,9 +98,9 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status
 			"stat=%d\n",
 			str,
 			urb,
-			usb_pipedevice (pipe),
-			usb_pipeendpoint (pipe),
-			usb_pipeout(pipe)? "out" : "in",
+			usb_pipedevice(pipe),
+			usb_pipeendpoint(pipe),
+			usb_pipeout(pipe) ? "out" : "in",
 			pipestring(pipe),
 			urb->transfer_flags,
 			urb->actual_length,
@@ -114,18 +114,18 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status
 		if (usb_pipecontrol(pipe)) {
 			admhc_dbg(ahcd, "setup(8):");
 			for (i = 0; i < 8 ; i++)
-				printk (" %02x", ((__u8 *) urb->setup_packet) [i]);
-			printk ("\n");
+				printk(KERN_INFO" %02x", ((__u8 *)urb->setup_packet)[i]);
+			printk(KERN_INFO "\n");
 		}
 		if (urb->transfer_buffer_length > 0 && urb->transfer_buffer) {
 			admhc_dbg(ahcd, "data(%d/%d):",
 				urb->actual_length,
 				urb->transfer_buffer_length);
-			len = usb_pipeout(pipe)?
-						urb->transfer_buffer_length: urb->actual_length;
+			len = usb_pipeout(pipe) ?
+						urb->transfer_buffer_length : urb->actual_length;
 			for (i = 0; i < 16 && i < len; i++)
-				printk(" %02x", ((__u8 *)urb->transfer_buffer)[i]);
-			printk("%s stat:%d\n", i < len? "...": "", status);
+				printk(KERN_INFO " %02x", ((__u8 *)urb->transfer_buffer)[i]);
+			printk(KERN_INFO "%s stat:%d\n", i < len ? "..." : "", status);
 		}
 	}
 #endif /* ADMHC_VERBOSE_DEBUG */
@@ -133,12 +133,12 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status
 
 #define admhc_dbg_sw(ahcd, next, size, format, arg...) \
 	do { \
-	if (next) { \
-		unsigned s_len; \
-		s_len = scnprintf(*next, *size, format, ## arg ); \
-		*size -= s_len; *next += s_len; \
-	} else \
-		admhc_dbg(ahcd,format, ## arg ); \
+		if (next) { \
+			unsigned s_len; \
+			s_len = scnprintf(*next, *size, format, ## arg); \
+			*size -= s_len; *next += s_len; \
+		} else \
+			admhc_dbg(ahcd, format, ## arg); \
 	} while (0);
 
 
@@ -170,7 +170,7 @@ static void maybe_print_eds(struct admhcd *ahcd, char *label, u32 value,
 		admhc_dbg_sw(ahcd, next, size, "%s %08x\n", label, value);
 }
 
-static char *buss2string (int state)
+static char *buss2string(int state)
 {
 	switch (state) {
 	case ADMHC_BUSS_RESET:
@@ -220,7 +220,7 @@ admhc_dump_status(struct admhcd *ahcd, char **next, unsigned *size)
 			admhc_readl(ahcd, &regs->hosthead), next, size);
 }
 
-#define dbg_port_sw(hc,num,value,next,size) \
+#define dbg_port_sw(hc, num, value, next, size) \
 	admhc_dbg_sw(hc, next, size, \
 		"portstatus [%d] " \
 		"0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \
@@ -286,7 +286,7 @@ static void admhc_dump(struct admhcd *ahcd, int verbose)
 
 	/* dumps some of the state we know about */
 	admhc_dump_status(ahcd, NULL, NULL);
-	admhc_dbg(ahcd,"current frame #%04x\n",
+	admhc_dbg(ahcd, "current frame #%04x\n",
 		admhc_frame_no(ahcd));
 
 	admhc_dump_roothub(ahcd, verbose, NULL, NULL);
@@ -348,7 +348,7 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	tmp = hc32_to_cpup(ahcd, &ed->hwHeadP);
 	admhc_dbg(ahcd, "  tds: head %08x tail %08x %s%s%s\n",
 		tmp & TD_MASK,
-		hc32_to_cpup (ahcd, &ed->hwTailP),
+		hc32_to_cpup(ahcd, &ed->hwTailP),
 		(tmp & ED_C) ? data1 : data0,
 		(tmp & ED_H) ? " HALT" : "",
 		verbose ? " td list follows" : " (not listing)");
@@ -362,7 +362,7 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 		list_for_each(tmp, &ed->td_list) {
 			struct td		*td;
 			td = list_entry(tmp, struct td, td_list);
-			admhc_dump_td (ahcd, "  ->", td);
+			admhc_dump_td(ahcd, "  ->", td);
 		}
 	}
 }
@@ -401,25 +401,28 @@ static const struct file_operations debug_async_fops = {
 	.open		= debug_async_open,
 	.read		= debug_output,
 	.release	= debug_close,
+	.llseek		= default_llseek,
 };
 static const struct file_operations debug_periodic_fops = {
 	.owner		= THIS_MODULE,
 	.open		= debug_periodic_open,
 	.read		= debug_output,
 	.release	= debug_close,
+	.llseek		= default_llseek,
 };
 static const struct file_operations debug_registers_fops = {
 	.owner		= THIS_MODULE,
 	.open		= debug_registers_open,
 	.read		= debug_output,
 	.release	= debug_close,
+	.llseek		= default_llseek,
 };
 
 static struct dentry *admhc_debug_root;
 
 struct debug_buffer {
 	ssize_t (*fill_func)(struct debug_buffer *);    /* fill method */
-	struct device *dev;
+	struct admhcd *ahcd;
 	struct mutex mutex;     /* protect filling of buffer */
 	size_t count;           /* number of characters filled into buffer */
 	char *page;
@@ -447,7 +450,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			" h:%08x t:%08x",
 			ed,
 			ed_statestring(ed->state),
-			ed_typestring (ed->type),
+			ed_typestring(ed->type),
 			(info & ED_SPEED_FULL) ? 'f' : 'l',
 			info & ED_FA_MASK,
 			(info >> ED_EN_SHIFT) & ED_EN_MASK,
@@ -458,7 +461,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			(info & ED_SKIP) ? " S" : "",
 			(headp & ED_H) ? " H" : "",
 			(headp & ED_C) ? data1 : data0,
-			headp & ED_MASK,tailp);
+			headp & ED_MASK, tailp);
 		size -= temp;
 		buf += temp;
 
@@ -466,9 +469,9 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			u32		dbp, cbl;
 
 			td = list_entry(entry, struct td, td_list);
-			info = hc32_to_cpup (ahcd, &td->hwINFO);
-			dbp = hc32_to_cpup (ahcd, &td->hwDBP);
-			cbl = hc32_to_cpup (ahcd, &td->hwCBL);
+			info = hc32_to_cpup(ahcd, &td->hwINFO);
+			dbp = hc32_to_cpup(ahcd, &td->hwDBP);
+			cbl = hc32_to_cpup(ahcd, &td->hwCBL);
 
 			temp = scnprintf(buf, size,
 				"\n\ttd/%p %s %d %s%scc=%x urb %p (%08x,%08x)",
@@ -477,7 +480,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 				TD_BL_GET(cbl),
 				(info & TD_OWN) ? "" : "DONE ",
 				(cbl & TD_IE) ? "IE " : "",
-				TD_CC_GET (info), td->urb, info, cbl);
+				TD_CC_GET(info), td->urb, info, cbl);
 			size -= temp;
 			buf += temp;
 		}
@@ -494,15 +497,11 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 
 static ssize_t fill_async_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
-	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
 	size_t			temp;
 	unsigned long		flags;
 
-	bus = dev_get_drvdata(buf->dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
+	ahcd = buf->ahcd;
 
 	spin_lock_irqsave(&ahcd->lock, flags);
 	temp = show_list(ahcd, buf->page, PAGE_SIZE, ahcd->ed_head);
@@ -516,8 +515,6 @@ static ssize_t fill_async_buffer(struct debug_buffer *buf)
 
 static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
-	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
 	struct ed		**seen, *ed;
 	unsigned long		flags;
@@ -525,13 +522,12 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 	char			*next;
 	unsigned		i;
 
-	if (!(seen = kmalloc(DBG_SCHED_LIMIT * sizeof *seen, GFP_ATOMIC)))
+	seen = kmalloc(DBG_SCHED_LIMIT * sizeof(*seen), GFP_ATOMIC);
+	if (!seen)
 		return 0;
 	seen_count = 0;
 
-	bus = dev_get_drvdata(buf->dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
+	ahcd = buf->ahcd;
 	next = buf->page;
 	size = PAGE_SIZE;
 
@@ -542,10 +538,11 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 	/* dump a snapshot of the periodic schedule (and load) */
 	spin_lock_irqsave(&ahcd->lock, flags);
 	for (i = 0; i < NUM_INTS; i++) {
-		if (!(ed = ahcd->periodic [i]))
+		ed = ahcd->periodic[i];
+		if (!ed)
 			continue;
 
-		temp = scnprintf(next, size, "%2d [%3d]:", i, ahcd->load [i]);
+		temp = scnprintf(next, size, "%2d [%3d]:", i, ahcd->load[i]);
 		size -= temp;
 		next += temp;
 
@@ -555,18 +552,18 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 			size -= temp;
 			next += temp;
 			for (temp = 0; temp < seen_count; temp++) {
-				if (seen [temp] == ed)
+				if (seen[temp] == ed)
 					break;
 			}
 
 			/* show more info the first time around */
 			if (temp == seen_count) {
-				u32	info = hc32_to_cpu (ahcd, ed->hwINFO);
+				u32	info = hc32_to_cpu(ahcd, ed->hwINFO);
 				struct list_head	*entry;
 				unsigned		qlen = 0;
 
 				/* qlen measured here in TDs, not urbs */
-				list_for_each (entry, &ed->td_list)
+				list_for_each(entry, &ed->td_list)
 					qlen++;
 				temp = scnprintf(next, size,
 					" (%cs dev%d ep%d%s qlen %u"
@@ -586,7 +583,7 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 				next += temp;
 
 				if (seen_count < DBG_SCHED_LIMIT)
-					seen [seen_count++] = ed;
+					seen[seen_count++] = ed;
 
 				ed = ed->ed_next;
 
@@ -603,7 +600,7 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 		next += temp;
 	}
 	spin_unlock_irqrestore(&ahcd->lock, flags);
-	kfree (seen);
+	kfree(seen);
 
 	return PAGE_SIZE - size;
 }
@@ -613,7 +610,6 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 
 static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
 	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
 	struct admhcd_regs __iomem *regs;
@@ -622,9 +618,8 @@ static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 	char			*next;
 	u32			rdata;
 
-	bus = dev_get_drvdata(buf->dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
+	ahcd = buf->ahcd;
+	hcd = admhc_to_hcd(ahcd);
 	regs = ahcd->regs;
 	next = buf->page;
 	size = PAGE_SIZE;
@@ -636,13 +631,13 @@ static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 	admhc_dbg_sw(ahcd, &next, &size,
 		"bus %s, device %s\n"
 		"%s\n"
-		"%s version " DRIVER_VERSION "\n",
+		"%s\n",
 		hcd->self.controller->bus->name,
 		dev_name(hcd->self.controller),
 		hcd->product_desc,
 		hcd_name);
 
-	if (bus->controller->power.power_state.event) {
+	if (!HCD_HW_ACCESSIBLE(hcd)) {
 		size -= scnprintf(next, size,
 			"SUSPENDED (no register access)\n");
 		goto done;
@@ -689,7 +684,7 @@ done:
 }
 
 
-static struct debug_buffer *alloc_buffer(struct device *dev,
+static struct debug_buffer *alloc_buffer(struct admhcd *ahcd,
 				ssize_t (*fill_func)(struct debug_buffer *))
 {
 	struct debug_buffer *buf;
@@ -697,7 +692,7 @@ static struct debug_buffer *alloc_buffer(struct device *dev,
 	buf = kzalloc(sizeof(struct debug_buffer), GFP_KERNEL);
 
 	if (buf) {
-		buf->dev = dev;
+		buf->ahcd = ahcd;
 		buf->fill_func = fill_func;
 		mutex_init(&buf->mutex);
 	}
@@ -790,26 +785,25 @@ static int debug_registers_open(struct inode *inode, struct file *file)
 static inline void create_debug_files(struct admhcd *ahcd)
 {
 	struct usb_bus *bus = &admhcd_to_hcd(ahcd)->self;
-	struct device *dev = bus->dev;
 
 	ahcd->debug_dir = debugfs_create_dir(bus->bus_name, admhc_debug_root);
 	if (!ahcd->debug_dir)
 		goto dir_error;
 
 	ahcd->debug_async = debugfs_create_file("async", S_IRUGO,
-						ahcd->debug_dir, dev,
+						ahcd->debug_dir, ahcd,
 						&debug_async_fops);
 	if (!ahcd->debug_async)
 		goto async_error;
 
 	ahcd->debug_periodic = debugfs_create_file("periodic", S_IRUGO,
-						ahcd->debug_dir, dev,
+						ahcd->debug_dir, ahcd,
 						&debug_periodic_fops);
 	if (!ahcd->debug_periodic)
 		goto periodic_error;
 
 	ahcd->debug_registers = debugfs_create_file("registers", S_IRUGO,
-						ahcd->debug_dir, dev,
+						ahcd->debug_dir, ahcd,
 						&debug_registers_fops);
 	if (!ahcd->debug_registers)
 		goto registers_error;

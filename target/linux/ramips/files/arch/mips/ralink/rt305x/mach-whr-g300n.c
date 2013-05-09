@@ -47,37 +47,33 @@ static struct gpio_led whr_g300n_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button whr_g300n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button whr_g300n_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "aoss",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-//		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_AOSS,
 		.active_low	= 1,
 	}, {
 		.desc		= "router-off",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-//		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_ROUTER_OFF,
 		.active_low	= 1,
 	}, {
 		.desc		= "router-on",
 		.type		= EV_KEY,
 		.code		= BTN_3,
-//		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_ROUTER_ON,
 		.active_low	= 1,
 	}

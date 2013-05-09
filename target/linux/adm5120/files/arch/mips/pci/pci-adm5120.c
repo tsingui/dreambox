@@ -21,12 +21,12 @@
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/io.h>
+#include <linux/delay.h>
 
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 #include <linux/pci_regs.h>
 
-#include <asm/delay.h>
 #include <asm/bootinfo.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
@@ -49,7 +49,7 @@
 static unsigned int adm5120_pci_nr_irqs __initdata;
 static struct adm5120_pci_irq *adm5120_pci_irq_map __initdata;
 
-static spinlock_t pci_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(pci_lock);
 
 /* -------------------------------------------------------------------------*/
 
@@ -71,8 +71,8 @@ static inline u32 read_cfgdata(void)
 
 static inline u32 mkaddr(struct pci_bus *bus, unsigned int devfn, int where)
 {
-	return (((bus->number & 0xFF) << 16) | ((devfn & 0xFF) << 8) | \
-		(where & 0xFC));
+	return ((bus->number & 0xFF) << 16) | ((devfn & 0xFF) << 8) | \
+		(where & 0xFC);
 }
 
 /* -------------------------------------------------------------------------*/
@@ -201,7 +201,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 		goto out;
 	}
 
-	if (slot < 1 || slot > 3) {
+	if (slot < 1 || slot > 4) {
 		printk(KERN_ALERT "PCI: slot number %u is not supported\n",
 			slot);
 		goto out;

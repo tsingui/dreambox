@@ -28,7 +28,7 @@
 #define TRX_NO_HEADER	0x1	/* do not write TRX header */
 #define TRX_GZ_FILES	0x2     /* contains individual gzip files */
 #define TRX_MAX_OFFSET	3
-#define TRX_MIN_KERNEL_SIZE	256*1024
+#define TRX_MIN_KERNEL_SIZE	(256 * 1024)
 
 struct trx_header {
 	u32 magic;	/* "HDR0" */
@@ -144,7 +144,7 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	part = &trx_parts[i];
 	part->name = "rootfs";
 
-	err = add_mtd_partitions(mtd, trx_parts, trx_nr_parts);
+	err = mtd_device_register(mtd, trx_parts, trx_nr_parts);
 	if (err) {
 		printk(KERN_ALERT PFX "adding TRX partitions failed\n");
 		return;
@@ -159,7 +159,7 @@ static int trxsplit_refresh_partitions(struct mtd_info *mtd)
 		mtd->name, MTD_BLOCK_MAJOR, mtd->index);
 
 	/* remove old partitions */
-	del_mtd_partitions(mtd);
+	mtd_device_unregister(mtd);
 
 	trxsplit_findtrx(mtd);
 	if (!trx_mtd)

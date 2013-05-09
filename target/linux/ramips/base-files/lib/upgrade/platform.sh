@@ -9,24 +9,27 @@ RAMFS_COPY_DATA=/lib/ramips.sh
 
 platform_check_image() {
 	local board=$(ramips_board_name)
-	local magic="$(get_magic_word "$1")"
+	local magic="$(get_magic_long "$1")"
 
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
 	3g-6200n | \
+	all0239-3g | \
 	all0256n | \
+	all5002 | \
 	bc2 | \
+	carambola | \
 	dir-300-b1 | \
 	dir-600-b1 | \
 	dir-600-b2 | \
+	dir-615-h1 | \
+	dir-615-d | \
+	dir-620-a1 | \
+	dir-620-d1 | \
+	dap-1350 | \
 	esr-9753 | \
 	fonera20n | \
-	rt-n13 | \
-	hg255d | \
-	hg256 | \
-	wap120nf | \
-	ap8100rt | \
 	freestation5 | \
 	hw550-3g | \
 	mofi3500-3gn | \
@@ -39,6 +42,8 @@ platform_check_image() {
 	rt-n15 | \
 	rt-n56u | \
 	sl-r7205 | \
+	tew-691gr | \
+	tew-692gr | \
 	w306r-v20 |\
 	w502u |\
 	wr6202 |\
@@ -50,7 +55,14 @@ platform_check_image() {
 	whr-g300n |\
 	ur-336un |\
 	wr512-3gn)
-		[ "$magic" != "2705" ] && {
+		[ "$magic" != "27051956" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+	dir-645)
+		[ "$magic" != "5ea3a417" ] && {
 			echo "Invalid image type."
 			return 1
 		}

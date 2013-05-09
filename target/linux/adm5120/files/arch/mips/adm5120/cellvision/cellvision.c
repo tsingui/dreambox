@@ -19,7 +19,6 @@
 #define CELLVISION_CONFIG_OFFSET	0x8000
 #define CELLVISION_CONFIG_SIZE		0x1000
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition cas6xx_partitions[] = {
 	{
 		.name	= "admboot",
@@ -65,7 +64,6 @@ static struct mtd_partition cas7xx_partitions[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static void switch_bank_gpio5(unsigned bank)
 {
@@ -105,20 +103,16 @@ void __init cellvision_mac_setup(void)
 
 void __init cas6xx_flash_setup(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas6xx_partitions);
 	adm5120_flash0_data.parts = cas6xx_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 
 	cellvision_flash_setup();
 }
 
 void __init cas7xx_flash_setup(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas7xx_partitions);
 	adm5120_flash0_data.parts = cas7xx_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 
 	cellvision_flash_setup();
 }
@@ -131,8 +125,10 @@ void __init cas6xx_setup(void)
 	adm5120_add_device_switch(1, NULL);
 }
 
-MIPS_MACHINE(MACH_ADM5120_CAS630, "Cellvision CAS-630/630W", cas6xx_setup);
-MIPS_MACHINE(MACH_ADM5120_CAS670, "Cellvision CAS-670/670W", cas6xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS630, "CAS-630", "Cellvision CAS-630/630W",
+	     cas6xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS670, "CAS-670", "Cellvision CAS-670/670W",
+	     cas6xx_setup);
 
 void __init cas7xx_setup(void)
 {
@@ -143,8 +139,9 @@ void __init cas7xx_setup(void)
 	adm5120_add_device_switch(1, NULL);
 }
 
-#if 0
-MIPS_MACHINE(MACH_ADM5120_CAS700, "Cellvision CAS-700/700W", cas7xx_setup);
-MIPS_MACHINE(MACH_ADM5120_CAS790, "Cellvision CAS-790", cas7xx_setup);
-MIPS_MACHINE(MACH_ADM5120_CAS861, "Cellvision CAS-861/861W", cas7xx_setup);
-#endif
+MIPS_MACHINE(MACH_ADM5120_CAS700, "CAS-700", "Cellvision CAS-700/700W",
+	     cas7xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS790, "CAS-790", "Cellvision CAS-790",
+	     cas7xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS861, "CAS-861", "Cellvision CAS-861/861W",
+	     cas7xx_setup);

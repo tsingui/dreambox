@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,11 +10,11 @@ SPI_MENU:=SPI Support
 define KernelPackage/mmc-spi
   SUBMENU:=$(SPI_MENU)
   TITLE:=MMC/SD over SPI Support
-  DEPENDS:=@LINUX_2_6 +kmod-mmc +kmod-crc-itu-t +kmod-crc7
+  DEPENDS:=+kmod-mmc +kmod-lib-crc-itu-t +kmod-lib-crc7
   KCONFIG:=CONFIG_MMC_SPI \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.ko
   AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
 endef
 
@@ -28,12 +28,11 @@ $(eval $(call KernelPackage,mmc-spi))
 define KernelPackage/spi-bitbang
   SUBMENU:=$(SPI_MENU)
   TITLE:=Serial Peripheral Interface bitbanging library
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_SPI_BITBANG \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,91,spi_bitbang)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-bitbang.ko
+  AUTOLOAD:=$(call AutoLoad,91,spi-bitbang)
 endef
 
 define KernelPackage/spi-bitbang/description
@@ -48,7 +47,7 @@ define KernelPackage/spi-gpio-old
   TITLE:=Old GPIO based bitbanging SPI controller (DEPRECATED)
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO_OLD
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.ko
   AUTOLOAD:=$(call AutoLoad,92,spi_gpio_old)
 endef
 
@@ -63,8 +62,8 @@ define KernelPackage/spi-gpio
   TITLE:=GPIO-based bitbanging SPI Master
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-gpio.ko
+  AUTOLOAD:=$(call AutoLoad,92,spi-gpio)
 endef
 
 define KernelPackage/spi-gpio/description
@@ -76,11 +75,10 @@ $(eval $(call KernelPackage,spi-gpio))
 define KernelPackage/spi-dev
   SUBMENU:=$(SPI_MENU)
   TITLE:=User mode SPI device driver
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_SPI_SPIDEV \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spidev.ko
   AUTOLOAD:=$(call AutoLoad,93,spidev)
 endef
 
@@ -90,33 +88,3 @@ endef
 
 $(eval $(call KernelPackage,spi-dev))
 
-define KernelPackage/bcm63xx-spi
-  SUBMENU:=$(SPI_MENU)
-  TITLE:=Broadcom BCM63xx SPI driver
-  DEPENDS:=@TARGET_brcm63xx +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_BCM63XX
-  FILES:=$(LINUX_DIR)/drivers/spi/bcm63xx_spi.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,bcm63xx_spi)
-endef
-
-define KernelPackage/bcm63xx-spi/description
-  This package contains the Broadcom BCM63xx SPI Master driver
-endef
-
-$(eval $(call KernelPackage,bcm63xx-spi))
-
-
-define KernelPackage/spi-vsc7385
-  SUBMENU:=$(SPI_MENU)
-  TITLE:=Vitesse VSC7385 ethernet switch driver
-  DEPENDS:=@TARGET_ar71xx
-  KCONFIG:=CONFIG_SPI_VSC7385
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_vsc7385.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,93,spi_vsc7385)
-endef
-
-define KernelPackage/spi-vsc7385/description
-  This package contains the SPI driver for the Vitesse VSC7385 ethernet switch.
-endef
-
-$(eval $(call KernelPackage,spi-vsc7385))

@@ -76,7 +76,7 @@
 #include "dwc_otg_pcd.h"
 #include "dwc_otg_hcd.h"
 
-#define DWC_DRIVER_VERSION	"2.72a 24-JUN-2008 (Patched by Lintel 2011)"
+#define DWC_DRIVER_VERSION	"2.72a 24-JUN-2008"
 #define DWC_DRIVER_DESC		"HS OTG USB Controller driver"
 
 static const char dwc_driver_name[] = "dwc_otg";
@@ -634,7 +634,7 @@ static int dwc_otg_driver_remove(struct platform_device *pdev)
 
 #ifndef DWC_HOST_ONLY
 	if (otg_dev->pcd) {
-		dwc_otg_pcd_remove(pdev);
+		dwc_otg_pcd_remove(&pdev->dev);
 	}
 #endif
 	if (otg_dev->core_if) {
@@ -823,7 +823,7 @@ static int dwc_otg_driver_probe(struct platform_device *pdev)
 	/*
 	 * Initialize the PCD
 	 */
-	retval = dwc_otg_pcd_init(pdev);
+	retval = dwc_otg_pcd_init(&pdev->dev);
 	if (retval != 0) {
 		DWC_ERROR("dwc_otg_pcd_init failed\n");
 		otg_dev->pcd = NULL;

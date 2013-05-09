@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2011 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 
 fw__uci_state_add() {
 	local var="$1"
@@ -28,7 +28,7 @@ fw__uci_state_del() {
 		rest="${rest:+$rest${e1:+ }}$e1"
 	done
 
-	uci_toggle_state firewall core $var "$val"
+	uci_toggle_state firewall core $var "$rest"
 }
 
 fw_configure_interface() {
@@ -105,6 +105,9 @@ fw_configure_interface() {
 		fw $action $mode n PREROUTING ${chain}_prerouting $ { -i "$ifname" $inet }
 		fw $action $mode r PREROUTING ${chain}_notrack    $ { -i "$ifname" $inet }
 		fw $action $mode n POSTROUTING ${chain}_nat       $ { -o "$ifname" $onet }
+
+		# Flush conntrack table
+		echo f >/proc/net/nf_conntrack 2>/dev/null
 
 		lock -u /var/run/firewall-interface.lock
 	}

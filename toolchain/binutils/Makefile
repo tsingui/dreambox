@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,26 +13,23 @@ BIN_VERSION:=$(PKG_VERSION)
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),2.18)
-  PKG_MD5SUM:=9d22ee4dafa3a194457caf4706f9cf01
-endif
 ifeq ($(PKG_VERSION),2.19.1)
-#  PKG_MD5SUM:=09a8c5821a2dfdbb20665bc0bd680791
-PKG_MD5SUM:=023222f392e9546bcbb0b4c0960729be
-endif
-ifeq ($(PKG_VERSION),2.19.1+cs)
-  BIN_VERSION:=20090205
-  PKG_SOURCE:=$(PKG_NAME)-$(BIN_VERSION).tar.bz2
-  PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-  PKG_MD5SUM:=040740e8c864dd1a15886753f9c0bc0b
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/binutils-$(BIN_VERSION)
-endif
-ifeq ($(PKG_VERSION),2.20)
-  PKG_MD5SUM:=ee2d3e996e9a2d669808713360fa96f8
+  PKG_MD5SUM:=09a8c5821a2dfdbb20665bc0bd680791
 endif
 ifeq ($(PKG_VERSION),2.20.1)
   PKG_MD5SUM:=9cdfb9d6ec0578c166d3beae5e15c4e5
 endif
+ifeq ($(PKG_VERSION),2.21)
+  PKG_MD5SUM:=c84c5acc9d266f1a7044b51c85a823f5
+endif
+ifeq ($(PKG_VERSION),2.21.1)
+  PKG_MD5SUM:=bde820eac53fa3a8d8696667418557ad
+endif
+ifeq ($(PKG_VERSION),2.22)
+  PKG_MD5SUM:=ee0f10756c84979622b992a4a61ea3f5
+endif
+
+HOST_BUILD_PARALLEL:=1
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
@@ -42,7 +39,7 @@ include $(INCLUDE_DIR)/toolchain-build.mk
 
 BINUTILS_CONFIGURE:= \
 	./configure \
-		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -50,12 +47,9 @@ BINUTILS_CONFIGURE:= \
 		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
-		$(if $(CONFIG_GCC_VERSION_4_4), \
-		  --with-ppl=$(REAL_STAGING_DIR_HOST) \
-		  --with-cloog=$(REAL_STAGING_DIR_HOST) \
-		) \
+		$(GRAPHITE_CONFIGURE) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) \
+		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) 
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
   BINUTILS_CONFIGURE+= \
@@ -83,12 +77,17 @@ define Host/Configure
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) all
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) all
 endef
 
 define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install
-	$(CP) $(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
+	mkdir -p $(TOOLCHAIN_DIR)/initial
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		prefix=$(TOOLCHAIN_DIR)/initial \
+		install
+	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
+	$(CP) $(TOOLCHAIN_DIR)/initial/. $(TOOLCHAIN_DIR)/
+	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
 endef
 
 define Host/Clean

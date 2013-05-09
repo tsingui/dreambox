@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,18 +9,18 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=kmod-switch
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/switch
   SUBMENU:=Other modules
-  DEPENDS:=@TARGET_brcm_2_4||TARGET_brcm47xx||TARGET_brcm63xx||TARGET_brcm4716
+  DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx
   TITLE:=Switch drivers
   FILES:= \
-	$(PKG_BUILD_DIR)/switch-core.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/switch-adm.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/switch-robo.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/switch-core.ko \
+	$(PKG_BUILD_DIR)/switch-adm.ko \
+	$(PKG_BUILD_DIR)/switch-robo.ko
   AUTOLOAD:=$(call AutoLoad,20,switch-core switch-robo switch-adm)
 endef
 
@@ -32,15 +32,6 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
-
-ifeq ($(BOARD),brcm-2.4)
-  BUILDFLAGS := -DBROADCOM -DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include
-else
-  ifeq ($(BOARD),brcm47xx)
-    BUILDFLAGS := -DBROADCOM
-  endif
-endif
-
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \

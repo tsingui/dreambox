@@ -8,12 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=2.6.35
-PKG_RELEASE:=3
+PKG_VERSION:=3.3.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://devresources.linux-foundation.org/dev/iproute2/download/
-PKG_MD5SUM:=b0f281b3124bf04669e18f5fe16d4934
+PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
+PKG_MD5SUM:=308e7145218dd552c2766fe527e239e1
+PKG_BUILD_PARALLEL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
 
@@ -27,6 +28,8 @@ endef
 
 define Package/ip
 $(call Package/iproute2/Default)
+  SUBMENU:=Routing and Redirection
+  DEPENDS:= +libnl-tiny
   TITLE:=Routing control utility
 endef
 
@@ -37,12 +40,17 @@ endef
 define Package/tc
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
-  DEPENDS:=+kmod-sched
+  DEPENDS:=+kmod-sched-core
 endef
 
 define Package/genl
 $(call Package/iproute2/Default)
   TITLE:=General netlink utility frontend
+endef
+
+define Package/ss
+$(call Package/iproute2/Default)
+  TITLE:=Socket statistics utility
 endef
 
 define Build/Configure
@@ -51,20 +59,23 @@ define Build/Configure
 		$(PKG_BUILD_DIR)/Makefile
 	$(SED) "s,^LIBC_INCLUDE.*,LIBC_INCLUDE=$(STAGING_DIR)/include," \
 		$(PKG_BUILD_DIR)/Makefile
-	# For now disable compiling of the misc directory because it seems to fail
-	rm -rf $(PKG_BUILD_DIR)/misc
-	$(SED) "s, misc,," $(PKG_BUILD_DIR)/Makefile
+	echo "static const char SNAPSHOT[] = \"$(PKG_VERSION)-$(PKG_RELEASE)-openwrt\";" \
+		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
 endef
 
+ifdef CONFIG_USE_EGLIBC
+  ifndef CONFIG_EGLIBC_VERSION_2_13
+    TARGET_CFLAGS += -DHAVE_SETNS
+  endif
+endif
+
 MAKE_FLAGS += \
-	EXTRA_CCOPTS="$(TARGET_CFLAGS)" \
+	EXTRA_CCOPTS="$(TARGET_CFLAGS) -I../include -I$(STAGING_DIR)/usr/include/libnl-tiny" \
 	KERNEL_INCLUDE="$(LINUX_DIR)/include" \
-	FPIC="$(FPIC)" \
-	all tc/tc ip/ip
+	FPIC="$(FPIC)"
 
 define Build/Compile
-	$(_SINGLE)$(MAKE) -C $(PKG_BUILD_DIR)/netem HOSTCC="$(HOSTCC)"  EXTRA_CCOPTS="$(TARGET_CFLAGS)" CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
-	$(_SINGLE)$(Build/Compile/Default)
+	+$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS)
 endef
 
 define Build/InstallDev
@@ -84,6 +95,8 @@ endef
 define Package/tc/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tc/tc $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_BIN) ./files/30-teql $(1)/etc/hotplug.d/iface/
 endef
 
 define Package/genl/install
@@ -91,6 +104,12 @@ define Package/genl/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/genl/genl $(1)/usr/sbin/
 endef
 
+define Package/ss/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc/ss $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,ip))
 $(eval $(call BuildPackage,tc))
 $(eval $(call BuildPackage,genl))
+$(eval $(call BuildPackage,ss))

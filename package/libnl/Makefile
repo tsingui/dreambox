@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnl
-PKG_VERSION:=1.1
-PKG_RELEASE:=4
+PKG_VERSION:=2.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=ae970ccd9144e132b68664f98e7ceeb1
+PKG_SOURCE_URL:=http://www.infradead.org/~tgr/libnl/files/
+PKG_MD5SUM:=6aaf1e9802a17a7d702bb0638044ffa7
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,18 +37,20 @@ define Build/Compile
 		install
 endef
 
-ifneq ($(CONFIG_LINUX_2_6),)
-  define Build/InstallDev
+define Build/InstallDev
 	$(INSTALL_DIR) $(1)
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 	mkdir -p $(1)/usr/include/libnl
 	$(CP) $(PKG_BUILD_DIR)/include/linux $(1)/usr/include/libnl/
-  endef
+endef
 
-  define Package/libnl/install
+define Package/libnl/install
 	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-route.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-genl.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-nf.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-route.so.* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl.so.* $(1)/usr/lib/
-  endef
-endif
+endef
 
 $(eval $(call BuildPackage,libnl))

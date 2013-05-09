@@ -9,14 +9,6 @@
 #define SWITCH_MEDIA_100	2
 #define SWITCH_MEDIA_FD		4
 
-#ifndef KERNEL_VERSION
-#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
-#define LINUX_2_4
-#endif
-
 typedef int (*switch_handler)(void *driver, char *buf, int nr);
 
 typedef struct {

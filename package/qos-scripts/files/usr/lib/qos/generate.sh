@@ -1,5 +1,5 @@
 #!/bin/sh
-[ -e /etc/functions.sh ] && . /etc/functions.sh || . ./functions.sh
+[ -e /lib/functions.sh ] && . /lib/functions.sh || . ./functions.sh
 [ -x /sbin/modprobe ] && {
 	insmod="modprobe"
 	rmmod="$insmod -r"
@@ -7,7 +7,7 @@
 	insmod="insmod"
 	rmmod="rmmod"
 }
- 
+
 add_insmod() {
 	eval "export isset=\${insmod_$1}"
 	case "$isset" in
@@ -53,8 +53,8 @@ parse_matching_rule() {
 	done
 	config_get type "$section" TYPE
 	case "$type" in
-		classify) unset pkt; append "$var" "-m mark --mark 0";;
-		default) pkt=1; append "$var" "-m mark --mark 0";;
+		classify) unset pkt; append "$var" "-m mark --mark 0/0xff";;
+		default) pkt=1; append "$var" "-m mark --mark 0/0xff";;
 		reclassify) pkt=1;;
 	esac
 	append "$var" "${proto:+-p $proto}"
@@ -69,9 +69,9 @@ parse_matching_rule() {
 				append "$var" "-d $value"
 			;;
 			*:layer7)
-				add_insmod xt_opendpi
-
-				append "$var" "-m opendpi --$value"
+				add_insmod ipt_layer7
+				add_insmod xt_layer7
+				append "$var" "-m layer7 --l7proto $value${pkt:+ --l7pkt}"
 			;;
 			*:ports|*:srcports|*:dstports)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
@@ -161,8 +161,8 @@ parse_matching_rule() {
 				config_get class "${value##!}" classnr
 				[ -z "$class" ] && continue;
 				case "$value" in
-					!*) append "$var" "-m mark ! --mark $class";;
-					*) append "$var" "-m mark --mark $class";;
+					!*) append "$var" "-m mark ! --mark $class/0xff";;
+					*) append "$var" "-m mark --mark $class/0xff";;
 				esac
 			;;
 			1:TOS)
@@ -323,8 +323,8 @@ start_interface() {
 		append ${prefix}q "$(tcrules)" "$N"
 		export dev_${dir}="ifconfig $dev up txqueuelen 5 >&- 2>&-
 tc qdisc del dev $dev root >&- 2>&-
-tc qdisc add dev $dev root handle 1: htb default ${class_default}0
-tc class add dev $dev parent 1: classid 1:1 htb  rate ${rate}kbit ceil ${rate}kbit"
+tc qdisc add dev $dev root handle 1: hfsc default ${class_default}0
+tc class add dev $dev parent 1: classid 1:1 hfsc sc rate ${rate}kbit ul rate ${rate}kbit"
 	done
 	[ -n "$download" ] && {
 		add_insmod cls_u32
@@ -335,43 +335,21 @@ tc class add dev $dev parent 1: classid 1:1 htb  rate ${rate}kbit ceil ${rate}kb
 	}
 	if [ -n "$halfduplex" ]; then
 		export dev_up="tc qdisc del dev $device root >&- 2>&-
-tc qdisc add dev $device root handle 1: htb
-tc filter add dev $device parent 1: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev ifb$ifbdev"
+tc qdisc add dev $device root handle 1: hfsc
+tc filter add dev $device parent 1: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$ifbdev"
 	elif [ -n "$download" ]; then
 		append dev_${dir} "tc qdisc del dev $device ingress >&- 2>&-
 tc qdisc add dev $device ingress
 tc filter add dev $device parent ffff: protocol ip prio 1 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev ifb$ifbdev" "$N"
 	fi
 	add_insmod cls_fw
-	add_insmod sch_htb
-	add_insmod sch_sfq
-	add_insmod sch_red
+	add_insmod sch_hfsc
+	add_insmod sch_fq_codel
 
 	cat <<EOF
 ${INSMOD:+$INSMOD$N}${dev_up:+$dev_up
-tc class add dev $device parent 1:1 classid 1:10 htb rate 15kbps ceil "$upload"kbit prio 1
-tc class add dev $device parent 1:1 classid 1:20 htb rate 20kbps ceil "$upload"kbit prio 2
-tc class add dev $device parent 1:1 classid 1:30 htb rate 10kbps ceil "$upload"kbit prio 3 
-tc class add dev $device parent 1:1 classid 1:4 htb rate 10kbps ceil $(($upload * 80 /100))kbit 
-tc class add dev $device parent 1:4 classid 1:40 htb rate 5kbps ceil $(($upload * 80 /100))kbit prio 4 
-tc class add dev $device parent 1:4 classid 1:50 htb rate 5kbps ceil $(($upload * 80 /100))kbit prio 5 
-tc filter add dev $device parent 1: prio 1 protocol ip handle 1 fw flowid 1:10
-tc filter add dev $device parent 1: prio 2 protocol ip handle 2 fw flowid 1:20
-tc filter add dev $device parent 1: prio 3 protocol ip handle 3 fw flowid 1:30
-tc filter add dev $device parent 1: prio 4 protocol ip handle 4 fw flowid 1:40
-tc filter add dev $device parent 1: prio 4 protocol ip handle 9 fw flowid 1:40
-tc filter add dev $device parent 1: prio 5 protocol ip handle 5 fw flowid 1:50
 $clsq
 }${ifbdev:+$dev_down
-tc class add dev ifb$ifbdev parent 1:1 classid 1:10 htb rate 30kbps ceil "$download"kbit prio 1
-tc class add dev ifb$ifbdev parent 1:1 classid 1:20 htb rate 50kbps ceil "$download"kbit prio 2
-tc class add dev ifb$ifbdev parent 1:1 classid 1:3 htb rate 100kbps ceil $(($download * 85 /100))kbit 
-tc class add dev ifb$ifbdev parent 1:3 classid 1:30 htb rate 50kbps ceil $(($download * 85 /100))kbit prio 3
-tc class add dev ifb$ifbdev parent 1:3 classid 1:40 htb rate 50kbps ceil $(($download * 85 /100))kbit prio 4
-tc filter add dev ifb$ifbdev parent 1: prio 1 protocol ip handle 1 fw flowid 1:10
-tc filter add dev ifb$ifbdev parent 1: prio 2 protocol ip handle 2 fw flowid 1:20
-tc filter add dev ifb$ifbdev parent 1: prio 3 protocol ip handle 3 fw flowid 1:30
-tc filter add dev ifb$ifbdev parent 1: prio 4 protocol ip handle 4 fw flowid 1:40
 $d_clsq
 $d_clsl
 $d_clsf
@@ -381,10 +359,10 @@ EOF
 }
 
 start_interfaces() {
-     local C="$1"
-        for iface in $INTERFACES; do
-                start_interface "$iface" "$C"
-        done
+	local C="$1"
+	for iface in $INTERFACES; do
+		start_interface "$iface" "$C"
+	done
 }
 
 add_rules() {
@@ -407,7 +385,7 @@ add_rules() {
 			unset iptrule
 		}
 
-		parse_matching_rule iptrule "$rule" "$options" "$prefix" "-j MARK --set-mark $target"
+		parse_matching_rule iptrule "$rule" "$options" "$prefix" "-j MARK --set-mark $target/0xff"
 		append "$var" "$iptrule" "$N"
 	done
 }
@@ -418,17 +396,17 @@ start_cg() {
 	local pktrules
 	local sizerules
 	enum_classes "$cg"
-	add_rules iptrules "$ctrules" "iptables -t mangle -A ${cg}_ct"
+	add_rules iptrules "$ctrules" "iptables -t mangle -A qos_${cg}_ct"
 	config_get classes "$cg" classes
 	for class in $classes; do
 		config_get mark "$class" classnr
 		config_get maxsize "$class" maxsize
 		[ -z "$maxsize" -o -z "$mark" ] || {
 			add_insmod ipt_length
-			append pktrules "iptables -t mangle -A ${cg} -m mark --mark $mark -m length --length ${maxsize}: -j MARK --set-mark 0" "$N"
+			append pktrules "iptables -t mangle -A qos_${cg} -m mark --mark $mark/0xff -m length --length $maxsize: -j MARK --set-mark 0/0xff" "$N"
 		}
 	done
-	add_rules pktrules "$rules" "iptables -t mangle -A ${cg}"
+	add_rules pktrules "$rules" "iptables -t mangle -A qos_${cg}"
 	for iface in $INTERFACES; do
 		config_get classgroup "$iface" classgroup
 		config_get device "$iface" device
@@ -437,90 +415,18 @@ start_cg() {
 		config_get download "$iface" download
 		config_get halfduplex "$iface" halfduplex
 		download="${download:-${halfduplex:+$upload}}"
-		append up "iptables -t mangle -A OUTPUT -o $device -j ${cg}" "$N"
-		append up "iptables -t mangle -A FORWARD -o $device -j ${cg}" "$N"
+		append up "iptables -t mangle -A OUTPUT -o $device -j qos_${cg}" "$N"
+		append up "iptables -t mangle -A FORWARD -o $device -j qos_${cg}" "$N"
 	done
-	add_insmod xt_opendpi
 	cat <<EOF
 $INSMOD
-iptables -t mangle -N Default
-iptables -t mangle -N Default_ct
-iptables -t mangle -A Default_ct -m mark --mark 0 -m tcp -p tcp -m multiport --ports 22,53 -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -p udp -m udp -m multiport --ports 22,53 -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -p tcp -m tcp -m multiport --ports 80,3389,3390,5900,1080,1194 -j MARK --set-mark 3
-
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --hf -j MARK --set-mark 1
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --pt11 -j MARK --set-mark 1
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --warcraft -j MARK --set-mark 1
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --counterstrike -j MARK --set-mark 1
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --crossfire  -j MARK --set-mark 1
-
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --qq -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --irc -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --aliwangwang -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --msn -j MARK --set-mark 2  
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --jabber -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --worldofwarcraft  -j MARK --set-mark 2
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --rdp -j MARK --set-mark 2 
-
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --httpactivesync -j MARK --set-mark 3
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --http -j MARK --set-mark 3
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --telnet -j MARK --set-mark 3  
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --flash -j MARK --set-mark 3
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --ntp -j MARK --set-mark 3 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7  --l7proto jpeg -j MARK --set-mark 3
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7  --l7proto png -j MARK --set-mark 3
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7  --l7proto gif -j MARK --set-mark 3
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7  --l7proto pdf -j MARK --set-mark 3 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --mdns -j MARK --set-mark 3  
-
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --ppstream -j MARK --set-mark 4
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --qqlive -j MARK --set-mark 4
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --bittorrent -j MARK --set-mark 4
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --ftp -j MARK --set-mark 4 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --feidian -j MARK --set-mark 4 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --ddl -j  MARK --set-mark 4
-
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --fasttrack -j  MARK --set-mark 5 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7 --l7proto rar -j MARK --set-mark 5 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7 --l7proto zip -j MARK --set-mark 5
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7 --l7proto exe -j MARK --set-mark 5
-iptables -t mangle -A Default_ct -m mark --mark 0 -m layer7 --l7proto tar -j MARK --set-mark 5 
-
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --funshion -j MARK --set-mark 9
-#iptables -t mangle -A Default_ct -m mark --mark 0 -m ipp2p --ipp2p -j MARK --set-mark 9
-iptables -t mangle -A Default_ct -m mark --mark 9 -m recent --set --name funshion --rsource --rport 
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --pptv -j MARK --set-mark 8
-iptables -t mangle -A Default_ct -m mark --mark 0 -m opendpi --thunder -j MARK --set-mark 8
-iptables -t mangle -A Default_ct -m mark --mark 8 -m recent --set --name p2p_up --rsource --rport -j MARK --set-mark 0x4
-iptables -t mangle -A Default_ct -j CONNMARK --save-mark
-iptables -t mangle -A Default -m connmark --mark 0 -m recent --update --seconds 600 --name p2p_up --rsource --rport -j CONNMARK --set-mark 0x4
-iptables -t mangle -A Default -m connmark --mark 0 -m recent --update --seconds 600 --name funshion --rsource --rport -j CONNMARK --set-mark 0x9
-iptables -t mangle -A Default -m connmark --mark 3 -m opendpi --thunder -j CONNMARK --set-mark 4
-iptables -t mangle -A Default -j CONNMARK --restore-mark
-iptables -t mangle -A Default -m mark --mark 0 -j Default_ct
-iptables -t mangle -A Default -m mark --mark 1 -m length --length 400: -j MARK --set-mark 0
-iptables -t mangle -A Default -m mark --mark 2 -m length --length 800: -j MARK --set-mark 0
-iptables -t mangle -A Default -p icmp -j MARK --set-mark 1
-iptables -t mangle -A Default -p tcp -m length --length :128 -m mark  --mark 3 -m tcp --tcp-flags ALL SYN -j MARK --set-mark 2
-iptables -t mangle -A Default -p tcp -m length --length :128 -m mark  --mark 3 -m tcp --tcp-flags ALL ACK -j MARK --set-mark 2
-iptables -t mangle -A Default -p tcp -m length --length :128 -m mark  --mark 0 -m tcp --tcp-flags ALL SYN -j MARK --set-mark 3
-iptables -t mangle -A Default -p tcp -m length --length :128 -m mark  --mark 0 -m tcp --tcp-flags ALL ACK -j MARK --set-mark 3
-iptables -t mangle -A Default -m mark --mark 0 -p udp -m length --length 0: -j MARK --set-mark 4
-iptables -t mangle -A Default -m mark --mark 0 -p tcp -m length --length 0: -j MARK --set-mark 4
-iptables -t mangle -A Default -m mark --mark 4 -p udp -m length --length 300: -j MARK --set-mark 5
-iptables -t mangle -A Default -m mark --mark 4 -p tcp -m length --length 300: -j MARK --set-mark 5
-iptables -t mangle -A Default -m mark --mark 9 -p udp -m length --length 300: -j MARK --set-mark 5
-iptables -t mangle -A Default -m mark --mark 9 -p tcp -m length --length 300: -j MARK --set-mark 5
-
-iptables -t mangle -A OUTPUT -o $device -j Default
-iptables -t mangle -A FORWARD -o $device -j Default
-iptables -t mangle -N Default_dn >&- 2>&-
-iptables -t mangle -N Default_ct_dn >&- 2>&-
-iptables -t mangle -A Default_dn -j CONNMARK --restore-mark
-iptables -t mangle -A Default_dn -m mark --mark 0 -j Default_ct_dn
-iptables -t mangle -A INPUT -i $device -j Default_dn
-iptables -t mangle -A FORWARD -i $device -j Default_dn
+iptables -t mangle -N qos_${cg} >&- 2>&-
+iptables -t mangle -N qos_${cg}_ct >&- 2>&-
+${iptrules:+${iptrules}${N}iptables -t mangle -A qos_${cg}_ct -j CONNMARK --save-mark --mask 0xff}
+iptables -t mangle -A qos_${cg} -j CONNMARK --restore-mark --mask 0xff
+iptables -t mangle -A qos_${cg} -m mark --mark 0/0xff -j qos_${cg}_ct
+$pktrules
+$up$N${down:+${down}$N}
 EOF
 	unset INSMOD
 }
@@ -528,13 +434,31 @@ EOF
 start_firewall() {
 	add_insmod ipt_multiport
 	add_insmod ipt_CONNMARK
-	cat <<EOF
-iptables -t mangle -F
-iptables -t mangle -X
-EOF
+	stop_firewall
 	for group in $CG; do
 		start_cg $group
 	done
+}
+
+stop_firewall() {
+	# Builds up a list of iptables commands to flush the qos_* chains,
+	# remove rules referring to them, then delete them
+
+	# Print rules in the mangle table, like iptables-save
+	iptables -t mangle -S |
+		# Find rules for the qos_* chains
+		grep '^-N qos_\|-j qos_' |
+		# Exclude rules in qos_* chains (inter-qos_* refs)
+		grep -v '^-A qos_' |
+		# Replace -N with -X and hold, with -F and print
+		# Replace -A with -D
+		# Print held lines at the end (note leading newline)
+		sed -e '/^-N/{s/^-N/-X/;H;s/^-X/-F/}' \
+			-e 's/^-A/-D/' \
+			-e '${p;g}' |
+		# Make into proper iptables calls
+		# Note:  awkward in previous call due to hold space usage
+		sed -n -e 's/^./iptables -t mangle &/p'
 }
 
 C="0"
@@ -561,6 +485,13 @@ case "$1" in
 		start_interfaces
 	;;
 	firewall)
-		start_firewall
+		case "$2" in
+			stop)
+				stop_firewall
+			;;
+			start|"")
+				start_firewall
+			;;
+		esac
 	;;
 esac

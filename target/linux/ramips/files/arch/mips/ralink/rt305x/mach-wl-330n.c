@@ -43,13 +43,12 @@ struct spi_board_info wl_330n_spi_slave_info[] __initdata = {
 	},
 };
 
-static struct gpio_button wl_330n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wl_330n_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = WL_330N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = WL_330N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WL_330N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	},
@@ -57,8 +56,7 @@ static struct gpio_button wl_330n_gpio_buttons[] __initdata = {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-//		.debounce_interval = WL_330N_KEYS_DEBOUNCE_INTERVAL,
-		.threshold	= 3,
+		.debounce_interval = WL_330N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WL_330N_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}

@@ -84,11 +84,12 @@ enum {
 	MACH_ADM5120_WP54,		/* Compex WP54G/WP54AG/WPP54G/WPP54AG */
 	MACH_ADM5120_WP54G_WRT,		/* Compex WP54G-WRT */
 	MACH_ADM5120_WP54Gv1C,		/* Compex WP54G version 1C */
+	MACH_ADM5120_EB_214A,		/* Generic EB-214A */
 };
 
 /*
  * TODO:remove adm5120_eth* variables when the switch driver will be
- * 	converted into a real platform driver
+ *	converted into a real platform driver
  */
 extern unsigned int adm5120_eth_num_ports;
 extern unsigned char adm5120_eth_macs[6][6];

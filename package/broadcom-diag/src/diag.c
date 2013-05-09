@@ -27,20 +27,12 @@
 #include <linux/timer.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
-
-#ifndef LINUX_2_4
 #include <linux/workqueue.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
+#include <linux/kobject.h>
 #include <net/sock.h>
-extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
-#else
-#include <linux/tqueue.h>
-#define INIT_WORK INIT_TQUEUE
-#define schedule_work schedule_task
-#define work_struct tq_struct
-#endif
 
 #include "gpio.h"
 #include "diag.h"
@@ -60,7 +52,11 @@ enum {
 	WRT54G,
 	WRTSL54GS,
 	WRT54G3G,
-	WRT160N,
+	WRT54G3GV2_VF,
+	WRT150NV1,
+	WRT150NV11,
+	WRT160NV1,
+	WRT160NV3,
 	WRT300NV11,
 	WRT350N,
 	WRT600N,
@@ -117,9 +113,12 @@ enum {
 
 	/* Belkin */
 	BELKIN_UNKNOWN,
+	BELKIN_F7D4301,
 
 	/* Netgear */
 	WGT634U,
+	WNR834BV1,
+	WNR834BV2,
 
 	/* Trendware */
 	TEW411BRPP,
@@ -147,6 +146,9 @@ enum {
 
 	/* Microsoft */
 	MN700,
+
+	/* Edimax */
+	PS1208MFG,
 };
 
 static void __init bcm4780_init(void) {
@@ -154,9 +156,9 @@ static void __init bcm4780_init(void) {
 
 		/* Enables GPIO 3 that controls HDD and led power on ASUS WL-700gE */
 		printk(MODULE_NAME ": Spinning up HDD and enabling leds\n");
-		gpio_outen(pin, pin);
-		gpio_control(pin, 0);
-		gpio_out(pin, pin);
+		bcm47xx_gpio_outen(pin, pin);
+		bcm47xx_gpio_control(pin, 0);
+		bcm47xx_gpio_out(pin, pin);
 
 		/* Wait 5s, so the HDD can spin up */
 		set_current_state(TASK_INTERRUPTIBLE);
@@ -166,14 +168,14 @@ static void __init bcm4780_init(void) {
 static void __init NetCenter_init(void) {
 		/* unset pin 6 (+12V) */
 		int pin = 1 << 6;
-		gpio_outen(pin, pin);
-		gpio_control(pin, 0);
-		gpio_out(pin, pin);
+		bcm47xx_gpio_outen(pin, pin);
+		bcm47xx_gpio_control(pin, 0);
+		bcm47xx_gpio_out(pin, pin);
 		/* unset pin 1 (turn off red led, blue will light alone if +5V comes up) */
 		pin = 1 << 1;
-		gpio_outen(pin, pin);
-		gpio_control(pin, 0);
-		gpio_out(pin, pin);
+		bcm47xx_gpio_outen(pin, pin);
+		bcm47xx_gpio_control(pin, 0);
+		bcm47xx_gpio_out(pin, pin);
 		/* unset pin 3 (+5V) and wait 5 seconds (harddisk spin up) */
 		bcm4780_init();
 }
@@ -181,12 +183,10 @@ static void __init NetCenter_init(void) {
 static void __init bcm57xx_init(void) {
 	int pin = 1 << 2;
 
-#ifndef LINUX_2_4
 	/* FIXME: switch comes up, but port mappings/vlans not right */
-	gpio_outen(pin, pin);
-	gpio_control(pin, 0);
-	gpio_out(pin, pin);
-#endif
+	bcm47xx_gpio_outen(pin, pin);
+	bcm47xx_gpio_control(pin, 0);
+	bcm47xx_gpio_out(pin, pin);
 }
 
 static struct platform_t __initdata platforms[] = {
@@ -274,8 +274,44 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "3g_blink",	.gpio = 1 << 5, .polarity = NORMAL },
 		},
 	},
-	[WRT160N] = {
-		.name		= "Linksys WRT160N",
+	[WRT54G3GV2_VF] = {
+		.name		= "Linksys WRT54G3GV2-VF",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "3g",		.gpio = 1 << 5 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "3g_green",	.gpio = 1 << 2, .polarity = NORMAL },
+			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
+		},
+	},
+	[WRT150NV1] = {
+		.name		= "Linksys WRT150N V1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_green",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE },
+		},
+	},
+	[WRT150NV11] = {
+		.name		= "Linksys WRT150N V1.1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_green",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE },
+		},
+	},
+	[WRT160NV1] = {
+		.name		= "Linksys WRT160N v1.x",
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 6 },
 			{ .name = "ses",	.gpio = 1 << 4 },
@@ -284,6 +320,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
 			{ .name = "ses_blue",	.gpio = 1 << 5, .polarity = REVERSE },
 			{ .name = "ses_orange", .gpio = 1 << 3, .polarity = REVERSE },
+		},
+	},
+	[WRT160NV3] = {
+		.name		= "Linksys WRT160N V3",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 5 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_blue",	.gpio = 1 << 4, .polarity = REVERSE },
+			{ .name = "ses_orange", .gpio = 1 << 2, .polarity = REVERSE },
 		},
 	},
 	[WRT300NV11] = {
@@ -783,6 +831,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "connected",	.gpio = 1 << 0, .polarity = NORMAL },
 		},
 	},
+	[BELKIN_F7D4301] = {
+		.name		= "Belkin PlayMax F7D4301",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "wps",	.gpio = 1 << 8 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 11, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 13, .polarity = REVERSE },
+			{ .name = "led0",	.gpio = 1 << 14, .polarity = REVERSE },
+			{ .name = "led1",	.gpio = 1 << 15, .polarity = REVERSE },
+		},
+	},
 	/* Netgear */
 	[WGT634U] = {
 		.name		= "Netgear WGT634U",
@@ -791,6 +852,28 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },
+		},
+	},
+	/* Netgear */
+	[WNR834BV1] = {
+		.name		= "Netgear WNR834B V1",
+		.buttons	= { /* TODO: add reset button and confirm LEDs - GPIO from dd-wrt */ },
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 4, .polarity = REVERSE },
+			{ .name = "diag",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 6, .polarity = REVERSE },
+		},
+	},
+	/* Netgear */
+	[WNR834BV2] = {
+		.name	 	= "Netgear WNR834B V2",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 2, .polarity = NORMAL },
+			{ .name = "diag",	.gpio = 1 << 3, .polarity = NORMAL },
+			{ .name = "connected",	.gpio = 1 << 7, .polarity = NORMAL },
 		},
 	},
 	/* Trendware */
@@ -922,6 +1005,17 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 6, .polarity = NORMAL },
 		},
 	},
+	/* Edimax */
+	[PS1208MFG] = {
+		.name   = "Edimax PS-1208MFG",
+		.buttons        = {
+			{ .name = "reset",	.gpio = 1 << 4 },
+		},
+		.leds     = {
+			{ .name = "status",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "wlan",	.gpio = 1 << 0, .polarity = NORMAL },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -965,6 +1059,8 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WL330GE];
 		if (startswith(buf,"RT-N16-")) /* RT-N16-* */
 			return &platforms[RTN16];
+		if (startswith(buf,"F7D4301")) /* F7D4301* */
+			return &platforms[BELKIN_F7D4301];
 	}
 
 	/* Based on "ModelId" */
@@ -1039,11 +1135,26 @@ static struct platform_t __init *platform_detect(void)
 			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
 				return &platforms[WRT54G3G];
 
+			if (!strcmp(boardtype, "0x042f") && !strcmp(getvar("model_name"), "WRT54G3GV2-VF"))
+				return &platforms[WRT54G3GV2_VF];
+
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
 				return &platforms[WRTSL54GS];
 
-			if (!strcmp(boardtype, "0x0472"))
-				return &platforms[WRT160N];
+			if (!strcmp(boardtype, "0x0472")) {
+				if(!strcmp(getvar("boot_hw_model"), "WRT150N")) {
+					if(!strcmp(getvar("boot_hw_ver"), "1"))
+						return &platforms[WRT150NV1];
+					else if(!strcmp(getvar("boot_hw_ver"), "1.1"))
+						return &platforms[WRT150NV11];
+				}
+				else if(!strcmp(getvar("boot_hw_model"), "WRT160N")) {
+					if(!strcmp(getvar("boot_hw_ver"), "1.0"))
+						return &platforms[WRT160NV1];
+					else if(!strcmp(getvar("boot_hw_ver"), "3.0"))
+						return &platforms[WRT160NV3];
+				}
+			}
 
 			/* default to WRT54G */
 			return &platforms[WRT54G];
@@ -1083,6 +1194,13 @@ static struct platform_t __init *platform_detect(void)
 
 		if (!strncmp(boardnum, "TH",2) && !strcmp(boardtype,"0x042f")) {
 			return &platforms[WDNetCenter];
+		}
+
+		if (!strcmp(boardtype,"0x0472") && !strcmp(getvar("cardbus"), "1")) { /* Netgear WNR834B  V1 and V2*/
+			if (!strcmp(boardnum, "08") || !strcmp(boardnum, "8"))
+				return &platforms[WNR834BV1];
+			if (!strcmp(boardnum, "01") || !strcmp(boardnum, "1"))
+				return &platforms[WNR834BV2];
 		}
 
 	} else { /* PMON based - old stuff */
@@ -1154,11 +1272,51 @@ static struct platform_t __init *platform_detect(void)
 	if (startswith(boardnum, "04FN")) /* SimpleTech SimpleShare */
 		return &platforms[STI_NAS];
 
-	if (!strcmp(getvar("boardnum"), "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
+	if (!strcmp(boardnum, "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
 		return &platforms[DWL3150];
+
+	if (!strcmp(boardnum, "01") && !strcmp(boardtype, "0x048e") && /* Edimax PS1208MFG */
+		!strcmp(getvar("status_gpio"), "1")) /* gpio based detection */
+		return &platforms[PS1208MFG];
 
 	/* not found */
 	return NULL;
+}
+
+static inline void ssb_maskset32(struct ssb_device *dev,
+				  u16 offset, u32 mask, u32 set)
+{
+	ssb_write32(dev, offset, (ssb_read32(dev, offset) & mask) | set);
+}
+
+static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
+{
+	int irq;
+
+	irq = gpio_to_irq(0);
+	if (irq == -EINVAL) return;
+	
+	if (enabled) {
+		if (request_irq(irq, handler, IRQF_SHARED, "gpio", handler))
+			return;
+	} else {
+		free_irq(irq, handler);
+	}
+
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		if (bcm47xx_bus.ssb.chipco.dev)
+			ssb_maskset32(bcm47xx_bus.ssb.chipco.dev, SSB_CHIPCO_IRQMASK, ~SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
+		break;
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		if (bcm47xx_bus.bcma.bus.drv_cc.core)
+			bcma_maskset32(bcm47xx_bus.bcma.bus.drv_cc.core, BCMA_CC_IRQMASK, ~BCMA_CC_IRQ_GPIO, (enabled ? BCMA_CC_IRQ_GPIO : 0));
+		break;
+#endif
+	}
 }
 
 static void register_buttons(struct button_t *b)
@@ -1168,24 +1326,23 @@ static void register_buttons(struct button_t *b)
 
 	platform.button_mask &= ~gpiomask;
 
-	gpio_outen(platform.button_mask, 0);
-	gpio_control(platform.button_mask, 0);
-	platform.button_polarity = gpio_in() & platform.button_mask;
-	gpio_intpolarity(platform.button_mask, platform.button_polarity);
-	gpio_setintmask(platform.button_mask, platform.button_mask);
+	bcm47xx_gpio_outen(platform.button_mask, 0);
+	bcm47xx_gpio_control(platform.button_mask, 0);
+	platform.button_polarity = bcm47xx_gpio_in(~0) & platform.button_mask;
+	bcm47xx_gpio_polarity(platform.button_mask, platform.button_polarity);
+	bcm47xx_gpio_intmask(platform.button_mask, platform.button_mask);
 
 	gpio_set_irqenable(1, button_handler);
 }
 
 static void unregister_buttons(struct button_t *b)
 {
-	gpio_setintmask(platform.button_mask, 0);
+	bcm47xx_gpio_intmask(platform.button_mask, 0);
 
 	gpio_set_irqenable(0, button_handler);
 }
 
 
-#ifndef LINUX_2_4
 static void add_msg(struct event_t *event, char *msg, int argv)
 {
 	char *s;
@@ -1202,9 +1359,6 @@ static void hotplug_button(struct work_struct *work)
 	struct event_t *event = container_of(work, struct event_t, wq);
 	char *s;
 
-	if (!uevent_sock)
-		return;
-
 	event->skb = alloc_skb(2048, GFP_KERNEL);
 
 	s = skb_put(event->skb, strlen(event->action) + 2);
@@ -1212,48 +1366,11 @@ static void hotplug_button(struct work_struct *work)
 	fill_event(event);
 
 	NETLINK_CB(event->skb).dst_group = 1;
-	netlink_broadcast(uevent_sock, event->skb, 0, 1, GFP_KERNEL);
+	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
 
 	kfree(event);
 }
 
-#else /* !LINUX_2_4 */
-static inline char *kzalloc(unsigned int size, unsigned int gfp)
-{
-	char *p;
-
-	p = kmalloc(size, gfp);
-	if (p == NULL)
-		return NULL;
-
-	memset(p, 0, size);
-
-	return p;
-}
-
-static void add_msg(struct event_t *event, char *msg, int argv)
-{
-	if (argv)
-		event->argv[event->anr++] = event->scratch;
-	else
-		event->envp[event->enr++] = event->scratch;
-
-	event->scratch += sprintf(event->scratch, "%s", msg) + 1;
-}
-
-static void hotplug_button(struct event_t *event)
-{
-	char *scratch = kzalloc(256, GFP_KERNEL);
-	event->scratch = scratch;
-
-	add_msg(event, hotplug_path, 1);
-	add_msg(event, "button", 1);
-	fill_event(event);
-	call_usermodehelper (event->argv[0], event->argv, event->envp);
-	kfree(scratch);
-	kfree(event);
-}
-#endif /* !LINUX_2_4 */
 
 static int fill_event (struct event_t *event)
 {
@@ -1268,30 +1385,24 @@ static int fill_event (struct event_t *event)
 	add_msg(event, buf, 0);
 	snprintf(buf, 128, "SEEN=%ld", event->seen);
 	add_msg(event, buf, 0);
-#ifndef LINUX_2_4
 	snprintf(buf, 128, "SEQNUM=%llu", uevent_next_seqnum());
 	add_msg(event, buf, 0);
-#endif
 
 	return 0;
 }
 
 
-#ifndef LINUX_2_4
 static irqreturn_t button_handler(int irq, void *dev_id)
-#else
-static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
-#endif
 {
 	struct button_t *b;
 	u32 in, changed;
 
-	in = gpio_in() & platform.button_mask;
-	gpio_intpolarity(platform.button_mask, in);
+	in = bcm47xx_gpio_in(~0) & platform.button_mask;
+	bcm47xx_gpio_polarity(platform.button_mask, in);
 	changed = platform.button_polarity ^ in;
 	platform.button_polarity = in;
 
-	changed &= ~gpio_outen(0, 0);
+	changed &= ~bcm47xx_gpio_outen(0, 0);
 
 	for (b = platform.buttons; b->name; b++) {
 		struct event_t *event;
@@ -1304,11 +1415,7 @@ static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
 			event->seen = (jiffies - b->seen)/HZ;
 			event->name = b->name;
 			event->action = b->pressed ? "pressed" : "released";
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 			INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
-#else
-			INIT_WORK(&event->wq, (void *)(void *)hotplug_button, (void *)event);
-#endif
 			schedule_work(&event->wq);
 		}
 
@@ -1351,10 +1458,10 @@ static void register_leds(struct led_t *l)
 		}
 	}
 
-	gpio_outen(mask, oe_mask);
-	gpio_control(mask, 0);
-	gpio_out(mask, val);
-	gpio_setintmask(mask, 0);
+	bcm47xx_gpio_outen(mask, oe_mask);
+	bcm47xx_gpio_control(mask, 0);
+	bcm47xx_gpio_out(mask, val);
+	bcm47xx_gpio_intmask(mask, 0);
 }
 
 static void unregister_leds(struct led_t *l)
@@ -1367,7 +1474,11 @@ static void unregister_leds(struct led_t *l)
 
 static void set_led_extif(struct led_t *led)
 {
-	gpio_set_extif(led->gpio, led->state);
+	volatile u8 *addr = (volatile u8 *) KSEG1ADDR(EXTIF_UART) + (led->gpio & ~GPIO_TYPE_MASK);
+	if (led->state)
+		*addr = 0xFF;
+	else
+		*addr;
 }
 
 static void led_flash(unsigned long dummy) {
@@ -1389,11 +1500,11 @@ static void led_flash(unsigned long dummy) {
 
 	mask &= ~gpiomask;
 	if (mask) {
-		u32 val = ~gpio_in();
+		u32 val = ~bcm47xx_gpio_in(~0);
 
-		gpio_outen(mask, mask);
-		gpio_control(mask, 0);
-		gpio_out(mask, val);
+		bcm47xx_gpio_outen(mask, mask);
+		bcm47xx_gpio_control(mask, 0);
+		bcm47xx_gpio_out(mask, val);
 	}
 	if (mask || extif_blink) {
 		mod_timer(&led_timer, jiffies + FLASH_TIME);
@@ -1402,12 +1513,7 @@ static void led_flash(unsigned long dummy) {
 
 static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-#ifdef LINUX_2_4
-	struct inode *inode = file->f_dentry->d_inode;
-	struct proc_dir_entry *dent = inode->u.generic_ip;
-#else
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
-#endif
 	char *page;
 	int len = 0;
 
@@ -1425,7 +1531,7 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 					if (led->gpio & GPIO_TYPE_EXTIF) {
 						len = sprintf(page, "%d\n", led->state);
 					} else {
-						u32 in = (gpio_in() & led->gpio ? 1 : 0);
+						u32 in = (bcm47xx_gpio_in(~0) & led->gpio ? 1 : 0);
 						u8 p = (led->polarity == NORMAL ? 0 : 1);
 						len = sprintf(page, "%d\n", ((in ^ p) ? 1 : 0));
 					}
@@ -1460,12 +1566,7 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 
 static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 {
-#ifdef LINUX_2_4
-	struct inode *inode = file->f_dentry->d_inode;
-	struct proc_dir_entry *dent = inode->u.generic_ip;
-#else
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
-#endif
 	char *page;
 	int ret = -EINVAL;
 
@@ -1494,9 +1595,9 @@ static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count,
 						led->state = p ^ ((page[0] == '1') ? 1 : 0);
 						set_led_extif(led);
 					} else {
-						gpio_outen(led->gpio, led->gpio);
-						gpio_control(led->gpio, 0);
-						gpio_out(led->gpio, ((p ^ (page[0] == '1')) ? led->gpio : 0));
+						bcm47xx_gpio_outen(led->gpio, led->gpio);
+						bcm47xx_gpio_control(led->gpio, 0);
+						bcm47xx_gpio_out(led->gpio, ((p ^ (page[0] == '1')) ? led->gpio : 0));
 					}
 				}
 				break;

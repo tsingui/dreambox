@@ -40,8 +40,9 @@ define KernelPackage/sangam-atm/Default
   SUBMENU:=Network Devices
   DEPENDS:=@TARGET_ar7 +kmod-atm
   TITLE:=AR7 ADSL driver
-  FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/tiatm.ko
   AUTOLOAD:=$(call AutoLoad,50,tiatm)
+  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
   MENU:=1
 endef
 

@@ -187,7 +187,7 @@ struct td {
 
 
 /* map OHCI TD status codes (CC) to errno values */
-static const int cc_to_error [16] = {
+static const int cc_to_error[16] = {
 	/* No  Error  */	0,
 	/* CRC Error  */	-EILSEQ,
 	/* Bit Stuff  */	-EPROTO,
@@ -403,6 +403,7 @@ struct admhcd {
 	 * other external transceivers should be software-transparent
 	 */
 	struct otg_transceiver	*transceiver;
+	void (*start_hnp)(struct admhcd *ahcd);
 #endif
 
 	/*
@@ -430,7 +431,7 @@ struct admhcd {
 #define	OHCI_QUIRK_BE_DESC	0x08			/* BE descriptors */
 #define	OHCI_QUIRK_BE_MMIO	0x10			/* BE registers */
 #define	OHCI_QUIRK_ZFMICRO	0x20			/* Compaq ZFMicro chipset*/
-	// there are also chip quirks/bugs in init logic
+	/* there are also chip quirks/bugs in init logic */
 
 #ifdef DEBUG
 	struct dentry		*debug_dir;
@@ -458,17 +459,17 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 
 #ifdef DEBUG
 #	define admhc_dbg(ahcd, fmt, args...) \
-		printk(KERN_DEBUG "adm5120-hcd: " fmt , ## args )
+		printk(KERN_DEBUG "adm5120-hcd: " fmt, ## args)
 #else
 #	define admhc_dbg(ahcd, fmt, args...) do { } while (0)
 #endif
 
 #define admhc_err(ahcd, fmt, args...) \
-	printk(KERN_ERR "adm5120-hcd: " fmt , ## args )
+	printk(KERN_ERR "adm5120-hcd: " fmt, ## args)
 #define admhc_info(ahcd, fmt, args...) \
-	printk(KERN_INFO "adm5120-hcd: " fmt , ## args )
+	printk(KERN_INFO "adm5120-hcd: " fmt, ## args)
 #define admhc_warn(ahcd, fmt, args...) \
-	printk(KERN_WARNING "adm5120-hcd: " fmt , ## args )
+	printk(KERN_WARNING "adm5120-hcd: " fmt, ## args)
 
 #ifdef ADMHC_VERBOSE_DEBUG
 #	define admhc_vdbg admhc_dbg
@@ -537,15 +538,7 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
  * Big-endian read/write functions are arch-specific.
  * Other arches can be added if/when they're needed.
  *
- * REVISIT: arch/powerpc now has readl/writel_be, so the
- * definition below can die once the STB04xxx support is
- * finally ported over.
  */
-#if defined(CONFIG_PPC) && !defined(CONFIG_PPC_MERGE)
-#define readl_be(addr)		in_be32((__force unsigned *)addr)
-#define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
-#endif
-
 static inline unsigned int admhc_readl(const struct admhcd *ahcd,
 	__hc32 __iomem *regs)
 {
@@ -745,7 +738,7 @@ static inline void admhc_dma_enable(struct admhcd *ahcd)
 
 	t |= ADMHC_HC_DMAE;
 	admhc_writel(ahcd, t, &ahcd->regs->host_control);
-	admhc_vdbg(ahcd,"DMA enabled\n");
+	admhc_vdbg(ahcd, "DMA enabled\n");
 }
 
 static inline void admhc_dma_disable(struct admhcd *ahcd)
@@ -758,5 +751,5 @@ static inline void admhc_dma_disable(struct admhcd *ahcd)
 
 	t &= ~ADMHC_HC_DMAE;
 	admhc_writel(ahcd, t, &ahcd->regs->host_control);
-	admhc_vdbg(ahcd,"DMA disabled\n");
+	admhc_vdbg(ahcd, "DMA disabled\n");
 }

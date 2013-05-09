@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 # Copyright 2010 Vertical Communications
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.41.11
-PKG_MD5SUM:=fb507a40c2706bc38306f150d069e345
+PKG_VERSION:=1.42.4
+PKG_MD5SUM:=b6e296f210d642361b7394437ff0f318
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
+
+PKG_BUILD_DEPENDS:=util-linux
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -27,60 +30,37 @@ $(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3/4 filesystem utilities
-  DEPENDS:=+libblkid +libuuid +libext2fs +libpthread
+  DEPENDS:=+libblkid +libuuid +libext2fs
 endef
 
 define Package/e2fsprogs/description
- This package contains essential ext2 filesystem utilities which consists of 
- e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 
+ This package contains essential ext2 filesystem utilities which consists of
+ e2fsck, mke2fs, tune2fs, and most of the other core ext2
  filesystem utilities.
-endef
-
-define Package/libuuid
-$(call Package/e2fsprogs/Default)
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=DCE compatible Universally Unique Identifier library
-endef
-
-define Package/libuuid/description
- Library for generating DCE compatible Universally Unique Identifiers.
-endef
-
-define Package/uuidgen
-$(call Package/e2fsprogs)
-  DEPENDS:=+libuuid
-  TITLE:=Command line utility to create a new UUID value
-endef
-
-define Package/uuidgen/description
- uuidgen program creates a new universally unique identifier (UUID) 
- using the libuuid library. The new UUID can reasonably be considered 
- unique among all UUIDs created on the local system, and among UUIDs 
- created on other systems in the past and in the future.
-endef
-
-define Package/libblkid
-$(call Package/e2fsprogs/Default)
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=block device id library
-endef
-
-define Package/libblkid/description
- The blkid library which allows system programs like fsck and mount to 
- quickly and easily find block devices by filesystem UUID and LABEL.
 endef
 
 define Package/libext2fs
 $(call Package/e2fsprogs/Default)
+  DEPENDS:=+libcom_err
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2/3/4 filesystem library
 endef
 
 define Package/libext2fs/description
-libext2fs is a library which can access ext2, ext3 and ext4 filesystems.
+ libext2fs is a library which can access ext2, ext3 and ext4 filesystems.
+endef
+
+define Package/libcom_err
+$(call Package/e2fsprogs/Default)
+  DEPENDS:=+libpthread
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Common error description library
+endef
+
+define Package/libcom_err/description
+ libcom_err is a library providing common error descriptions
 endef
 
 define Package/tune2fs
@@ -101,21 +81,16 @@ $(call Package/e2fsprogs)
   DEPENDS:= +e2fsprogs
 endef
 
-define Package/blkid
-$(call Package/e2fsprogs)
-  TITLE:=Command-line utility to locate/print block device attributes
-  DEPENDS:=+libuuid +libblkid
-endef
-
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
-	--enable-shared \
-	--enable-static \
-	--disable-rpath \
-	--enable-elf-shlibs \
-	--enable-dynamic-e2fsck \
-	--disable-tls
+	--enable-elf-shlibs	\
+	--disable-libuuid	\
+	--disable-libblkid	\
+	--disable-uuidd		\
+	--disable-tls		\
+	--disable-nls		\
+	--disable-rpath
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
@@ -132,7 +107,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+		all
 endef
 
 define Build/InstallDev
@@ -154,25 +129,16 @@ define Package/e2fsprogs/install
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext4
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(foreach lib,com_err e2p,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libe2p.so.* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/lib/functions/fsck
 	$(INSTALL_DATA) ./files/e2fsck.sh $(1)/lib/functions/fsck/
+	$(INSTALL_DATA) ./files/e2fsck.conf $(1)/etc/e2fsck.conf
 endef
 
-define Package/libuuid/install
+define Package/libcom_err/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuuid.so.* $(1)/usr/lib/
-endef
-
-define Package/uuidgen/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uuidgen $(1)/usr/bin/
-endef
-
-define Package/libblkid/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libblkid.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so.* $(1)/usr/lib/
 endef
 
 define Package/libext2fs/install
@@ -195,17 +161,9 @@ define Package/badblocks/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/badblocks $(1)/usr/sbin/
 endef
 
-define Package/blkid/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/blkid $(1)/usr/sbin/
-endef
-
 $(eval $(call BuildPackage,e2fsprogs))
-$(eval $(call BuildPackage,libuuid))
-$(eval $(call BuildPackage,uuidgen))
-$(eval $(call BuildPackage,libblkid))
 $(eval $(call BuildPackage,libext2fs))
+$(eval $(call BuildPackage,libcom_err))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
-$(eval $(call BuildPackage,blkid))

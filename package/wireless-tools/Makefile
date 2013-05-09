@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wireless-tools
 PKG_VERSION:=29
 PKG_MINOR:=
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION)$(PKG_MINOR).tar.gz
 PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
@@ -56,6 +56,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I." \
 		BUILD_WE_ESSENTIAL=y \
+		LIBS="-lm -Wl,--gc-sections" \
 		libiw.so.$(PKG_VERSION) iwmulticall
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)" \
@@ -75,10 +76,8 @@ endef
 define Package/wireless-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iwconfig $(1)/usr/sbin/
-	ln -sf iwconfig $(1)/usr/sbin/iwgetid
 	ln -sf iwconfig $(1)/usr/sbin/iwlist
 	ln -sf iwconfig $(1)/usr/sbin/iwpriv
-	ln -sf iwconfig $(1)/usr/sbin/iwspy
 endef
 
 define Package/libiw/install

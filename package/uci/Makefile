@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2011 OpenWrt.org
+# Copyright (C) 2008-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,21 +7,30 @@
 
 include $(TOPDIR)/rules.mk
 
-UCI_VERSION=12012009
-UCI_RELEASE=7
+UCI_VERSION=2013-05-02
+UCI_RELEASE=1
 
 PKG_NAME:=uci
 PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
-PKG_RELEASE:=4
-PKG_REV:=aa3ab8012bfbf793d2884c08ea924545a04e9544
+PKG_RELEASE:=1
+PKG_REV:=b42ee8f21842fab41a4cdf27960000bb1b3f42a7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://nbd.name/uci.git
 PKG_SOURCE_SUBDIR:=uci-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_PROTO:=git
+PKG_MIRROR_MD5SUM:=39a07950eaaa4548a5a2bba3b62df788
+
+PKG_LICENSE:=LGPLv2.1 GPLv2
+PKG_LICENSE_FILES:=
+
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
+PKG_BUILD_PARALLEL:=0
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 # set to 1 to enable debugging
 DEBUG=
@@ -39,13 +48,6 @@ define Package/uci
   TITLE:=Utility for the Unified Configuration Interface (UCI)
 endef
 
-define Package/ucitrigger
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=+libuci-lua +lua
-  TITLE:=Automatic triggers for applying system config changes
-endef
-
 define Package/libuci-lua
   SECTION=libs
   CATEGORY=Libraries
@@ -53,29 +55,12 @@ define Package/libuci-lua
   TITLE:=Lua plugin for UCI
 endef
 
-define Build/Configure
-endef
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+TARGET_LDFLAGS += -L$(STAGING_DIR)/usr/lib
 
-UCI_MAKEOPTS = \
-		$(TARGET_CONFIGURE_OPTS) \
-		COPTS="$(TARGET_CFLAGS)" \
-		DEBUG="$(DEBUG)" \
-		VERSION="$(UCI_VERSION)" \
-		CPPFLAGS="-I$(PKG_BUILD_DIR) $(TARGET_CPPFLAGS)" \
-		FPIC="$(FPIC)" \
-		OS="Linux"
-
-# work around a nasty gcc bug
-ifneq ($(CONFIG_GCC_VERSION_4_2_4),)
-  UCI_MAKEOPTS += WOPTS=""
-endif
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) $(UCI_MAKEOPTS)
-	$(MAKE) -C $(PKG_BUILD_DIR)/lua $(UCI_MAKEOPTS)
-	$(MAKE) -C $(PKG_BUILD_DIR)/trigger $(UCI_MAKEOPTS) \
-		LIBS="$(TARGET_LDFLAGS) -L$(PKG_BUILD_DIR) -luci -llua -lcrypt -lm"
-endef
+CMAKE_OPTIONS = \
+	-DLUAPATH=/usr/lib/lua \
+	$(if $(DEBUG),-DUCI_DEBUG=ON)
 
 define Package/libuci/install
 	$(INSTALL_DIR) $(1)/lib
@@ -87,14 +72,6 @@ define Package/libuci-lua/install
 	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/lib/lua/
 endef
 
-define Package/ucitrigger/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/uci $(1)/lib/config/trigger $(1)/usr/sbin
-	$(INSTALL_DATA) ./trigger/lib/trigger.lua $(1)/usr/lib/lua/uci/
-	$(INSTALL_DATA) ./trigger/modules/*.lua $(1)/lib/config/trigger/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/trigger/uci_trigger.so $(1)/usr/lib/
-	$(INSTALL_BIN) ./trigger/apply_config $(1)/usr/sbin/
-endef
-
 define Package/uci/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/sbin
@@ -104,13 +81,12 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/uci{,_config}.h $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/uci{,_config,map}.h $(1)/usr/include
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libuci.so* $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libuci.a $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libucimap.a $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,uci))
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
-$(eval $(call BuildPackage,ucitrigger))

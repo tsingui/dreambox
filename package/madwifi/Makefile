@@ -12,13 +12,14 @@ PKG_NAME:=madwifi
 
 PKG_REV:=3314
 PKG_VERSION:=r$(PKG_REV)
-PKG_RELEASE:=4
+PKG_RELEASE:=6
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://madwifi-project.org/svn/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+PKG_MIRROR_MD5SUM:=086b026d1c1561be8a949b79b0931404
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 
@@ -73,23 +74,23 @@ endif
 ifeq ($(ARCH),i686)
   HAL_TARGET:=i386-elf
 endif
-ifeq ($(BOARD),ixp4xx)
-  HAL_TARGET:=xscale-be-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+ifeq ($(ARCH),armeb)
+  HAL_TARGET:=xscale-be-elfgnueabi
 endif
-ifeq ($(BOARD),iop32x)
-  HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
-endif
-ifeq ($(BOARD),kirkwood)
-  HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
-endif
-ifeq ($(BOARD),orion)
-  HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+ifeq ($(ARCH),arm)
+  HAL_TARGET:=xscale-le-elfgnueabi
+  ifeq ($(BOARD),cns21xx)
+    HAL_TARGET:=armv4-le-elfgnueabi
+  endif
+  ifeq ($(BOARD),cns3xxx)
+    HAL_TARGET:=arm11-le-elfgnueabi
+  endif
+  ifeq ($(BOARD),gemini)
+    HAL_TARGET:=armv4-le-elfgnueabi
+  endif
 endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
-endif
-ifeq ($(BOARD),gemini)
-  HAL_TARGET:=armv4-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
 endif
 ifneq ($(CONFIG_TARGET_atheros),)
   HAL_TARGET:=wisoc
@@ -112,19 +113,19 @@ ifdef CONFIG_MADWIFI_RCA_SAMPLERATE
 endif
 
 ifneq ($(CONFIG_MADWIFI_SINGLE_MODULE),)
-MADWIFI_FILES:= $(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX)
+MADWIFI_FILES:= $(PKG_BUILD_DIR)/ath_hal/ath_hal.ko
 else
 MADWIFI_FILES:= \
-	$(PKG_BUILD_DIR)/net80211/wlan.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_scan_ap.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_scan_sta.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_acl.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_ccmp.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_tkip.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_wep.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_xauth.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/net80211/wlan.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_scan_ap.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_scan_sta.ko \
+	$(PKG_BUILD_DIR)/ath_hal/ath_hal.ko \
+	$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_acl.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_ccmp.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_tkip.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_wep.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_xauth.ko
 endif
 
 ifneq ($(CONFIG_MADWIFI_SINGLE_MODULE),)
@@ -144,11 +145,11 @@ else
 endif
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
-  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
+  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.ko
   MADWIFI_AUTOLOAD+= ath_ahb
 endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
-  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
+  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.ko
   MADWIFI_AUTOLOAD+= ath_pci
 endif
 
@@ -161,8 +162,7 @@ define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
   URL:=http://madwifi-project.org/
-  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
-  DEPENDS:=+wireless-tools @LINUX_2_6 @PCI_SUPPORT @(!(TARGET_avr32||TARGET_cobalt||TARGET_ep93xx||TARGET_etrax||TARGET_octeon||TARGET_pxcab||TARGET_sibyte)||BROKEN)
+  DEPENDS:=+wireless-tools @PCI_SUPPORT @(!(TARGET_avr32||TARGET_cobalt||TARGET_ep93xx||TARGET_etrax||TARGET_octeon||TARGET_pxcab||TARGET_sibyte)||BROKEN) +@DRIVER_WEXT_SUPPORT
   FILES:=$(MADWIFI_FILES)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
   MENU:=1
@@ -225,6 +225,10 @@ define Build/Prepare
 		$(PKG_BUILD_DIR)/hal/public/*.inc
 	$(SED) 's,march=armv4,march=armv5te,' \
 		$(PKG_BUILD_DIR)/hal/public/xscale*.inc
+	$(SED) 's,march=armv6j,march=armv6k,' \
+		$(PKG_BUILD_DIR)/hal/public/arm11*.inc
+	$(SED) 's,mtune=arm1136j-s,mtune=mpcore,' \
+		$(PKG_BUILD_DIR)/hal/public/arm11*.inc
 endef
 
 ifeq ($(findstring AHB,$(BUS)),AHB)

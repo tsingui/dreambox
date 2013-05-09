@@ -25,8 +25,6 @@
 #include <asm/mach-ralink/rt305x_regs.h>
 #include "common.h"
 
-static unsigned int ramips_cpu_freq;
-
 static void rt305x_restart(char *command)
 {
 	rt305x_sysc_wr(RT305X_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
@@ -59,7 +57,7 @@ void __init ramips_soc_setup(void)
 	clk = clk_get(NULL, "cpu");
 	if (IS_ERR(clk))
 		panic("unable to get CPU clock, err=%ld", PTR_ERR(clk));
-	ramips_cpu_freq = clk_get_rate(clk);
+
 	printk(KERN_INFO "%s running at %lu.%02lu MHz\n", ramips_sys_type,
 		clk_get_rate(clk) / 1000000,
 		(clk_get_rate(clk) % 1000000) * 100 / 1000000);
@@ -87,9 +85,4 @@ void __init plat_time_init(void)
 		panic("unable to get CPU clock, err=%ld", PTR_ERR(clk));
 
 	mips_hpt_frequency = clk_get_rate(clk) / 2;
-}
-
-unsigned int ramips_get_cpu_freq(void)
-{
-	return ramips_cpu_freq;
 }
