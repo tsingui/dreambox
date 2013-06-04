@@ -467,10 +467,17 @@ define KernelPackage/ppp
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC \
 	CONFIG_SLHC
+ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1) 
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_async.ko \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_generic.ko \
 	$(LINUX_DIR)/drivers/net/slip/slhc.ko
+else 
+  FILES:= \ 
+	$(LINUX_DIR)/drivers/net/ppp_async.ko \ 
+	$(LINUX_DIR)/drivers/net/ppp_generic.ko \ 
+	$(LINUX_DIR)/drivers/net/slhc.ko 
+endif
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
 endef
 
@@ -486,7 +493,11 @@ define KernelPackage/ppp-synctty
   TITLE:=PPP sync tty support
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPP_SYNC_TTY
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1)
   FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_synctty.ko
+else
+  FILES:=$(LINUX_DIR)/drivers/net/ppp_synctty.ko 
+endef
   AUTOLOAD:=$(call AutoLoad,40,ppp_synctty)
 endef
 
@@ -502,7 +513,11 @@ define KernelPackage/pppox
   TITLE:=PPPoX helper
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPPOE
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1) 
   FILES:=$(LINUX_DIR)/drivers/net/ppp/pppox.ko
+else
+  FILES:=$(LINUX_DIR)/drivers/net/pppox.ko
+endef
   AUTOLOAD:=$(call AutoLoad,40,pppox)
 endef
 
@@ -518,7 +533,11 @@ define KernelPackage/pppoe
   TITLE:=PPPoE support
   DEPENDS:=kmod-ppp +kmod-pppox
   KCONFIG:=CONFIG_PPPOE
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1) 
   FILES:=$(LINUX_DIR)/drivers/net/ppp/pppoe.ko
+else
+  FILES:=$(LINUX_DIR)/drivers/net/pppoe.ko
+endef
   AUTOLOAD:=$(call AutoLoad,41,pppoe)
 endef
 
@@ -562,7 +581,11 @@ define KernelPackage/pppol2tp
   TITLE:=PPPoL2TP support
   DEPENDS:=kmod-ppp +kmod-pppox +kmod-l2tp
   KCONFIG:=CONFIG_PPPOL2TP
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1) 
   FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ppp.ko
+else
+  FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.ko 
+endef
   AUTOLOAD:=$(call AutoLoad,41,l2tp_ppp)
 endef
 
@@ -596,7 +619,11 @@ define KernelPackage/mppe
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1) 
   FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_mppe.ko
+else
+  FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.ko
+endef
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
 
