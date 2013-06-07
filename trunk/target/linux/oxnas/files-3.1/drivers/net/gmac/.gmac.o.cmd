@@ -1,0 +1,1 @@
+cmd_drivers/net/gmac/gmac.o := /home/lintel/openwrt-pandorabox/staging_dir/toolchain-arm_v6_gcc-4.6-linaro_uClibc-0.9.33.2_eabi/bin/arm-openwrt-linux-ld -EL    -r -o drivers/net/gmac/gmac.o drivers/net/gmac/gmac-napi.o drivers/net/gmac/gmac_ethtool.o drivers/net/gmac/gmac_phy.o drivers/net/gmac/gmac_desc.o drivers/net/gmac/gmac_netoe.o 
