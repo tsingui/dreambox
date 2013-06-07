@@ -437,7 +437,7 @@ static void __init oxnas_init_irq(void)
     OX820_RPS_cascade_irq( RPSA_IRQ_INTERRUPT);
 }
 
-MACHINE_START(OX820, "Oxsemi NAS")
+MACHINE_START(OX820, "PogoPlug Pro")
     /* Maintainer: Oxford Semiconductor Ltd */
 #if 0
 #ifdef CONFIG_ARCH_OXNAS_UART1
