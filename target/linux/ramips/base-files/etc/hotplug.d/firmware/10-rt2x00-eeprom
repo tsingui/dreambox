@@ -76,6 +76,7 @@ case "$FIRMWARE" in
 	psr-680w | \
 	rt-n15 | \
 	rt-n56u | \
+	wr8405rt | \
 	sl-r7205 | \
 	v11st-fe | \
 	v22rw-2x2 | \

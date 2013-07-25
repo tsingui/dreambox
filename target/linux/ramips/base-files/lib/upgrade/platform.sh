@@ -42,6 +42,7 @@ platform_check_image() {
 	rt-n10-plus | \
 	rt-n15 | \
 	rt-n56u | \
+	wr8405rt | \
 	sl-r7205 | \
 	tew-691gr | \
 	tew-692gr | \
