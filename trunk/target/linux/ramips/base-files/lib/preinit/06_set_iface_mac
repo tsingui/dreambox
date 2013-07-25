@@ -21,6 +21,7 @@ preinit_set_mac_address() {
 	freestation5 |\
 	nw718 |\
 	psr-680w |\
+	wr8405rt |\
 	rt-n56u |\
 	sl-r7205)
 		mac=$(ramips_get_mac_binary factory 4)

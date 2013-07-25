@@ -87,6 +87,8 @@ get_status_led() {
 		;;
 	rt-n56u | wl-330n | wl-330n3g)
 		status_led="asus:blue:power"
+	wr8405rt)
+		status_led="zbt:power"
 		;;
 	sl-r7205)
 		status_led="sl-r7205:green:status"
