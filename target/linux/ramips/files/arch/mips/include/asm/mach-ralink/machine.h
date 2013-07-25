@@ -72,6 +72,7 @@ enum ramips_mach_type {
 	/* RT3662 based machines */
 	RAMIPS_MACH_DIR_645,		/* D-Link DIR-645 */
 	RAMIPS_MACH_RT_N56U,		/* Asus RT-N56U */
+	RAMIPS_MACH_WR8405RT,		/* ZBT WR8405RT */
 
 	/* RT3883 based machines */
 	RAMIPS_MACH_TEW_691GR,		/* TRENDnet TEW-691GR */
