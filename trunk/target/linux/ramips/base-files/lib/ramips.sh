@@ -146,7 +146,7 @@ ramips_board_name() {
 	*"RT-N15")
 		name="rt-n15"
 		;;
-	*"ZBT WR8405RT")
+	*"WR8405RT")
 		name="wr8405rt"
 		;;
 	*"RT-N56U")
