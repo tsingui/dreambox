@@ -54,7 +54,6 @@ get_status_led() {
 	fonera20n)
 		status_led="fonera20n:green:power"
 		;;
-	all0239-3g|\
 	hg255d)
 		status_led="hg255d:power"
 		;;
@@ -87,6 +86,7 @@ get_status_led() {
 		;;
 	rt-n56u | wl-330n | wl-330n3g)
 		status_led="asus:blue:power"
+		;;
 	wr8405rt)
 		status_led="zbt:power"
 		;;
