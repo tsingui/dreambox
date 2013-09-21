@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/host.mk
 ARCH:=arm
 BOARD:=oxnas
 BOARDNAME:=Oxford OXE8x0
-FEATURES:=ext4 squashfs
+FEATURES:=ext4 squashfs ubifs
 MAINTAINER:=lintel<lintel.huang@gmail.com>
 
 LINUX_VERSION:=3.1.10
@@ -22,6 +22,7 @@ define Target/Description
 	Build firmware image for NAS78xx.
 endef
 
-CFLAGS:=-pipe -march=armv6 -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=softfp -marm
+#CFLAGS:=-pipe -march=armv6 -mtune=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -marm
+CFLAGS:=-Os -pipe -march=armv6 -mtune=arm1136j-s -fno-caller-saves
 
 $(eval $(call BuildTarget))
