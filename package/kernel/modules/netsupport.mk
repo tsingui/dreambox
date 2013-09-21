@@ -475,9 +475,9 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1)
 	$(LINUX_DIR)/drivers/net/slip/slhc.ko
 else
   FILES:= \
-	$(LINUX_DIR)/drivers/ppp/ppp_async.ko \
-	$(LINUX_DIR)/drivers/ppp/ppp_generic.ko \
-	$(LINUX_DIR)/drivers/net/slip/slhc.ko
+	$(LINUX_DIR)/drivers/net/ppp_async.ko \
+	$(LINUX_DIR)/drivers/net/ppp_generic.ko \
+	$(LINUX_DIR)/drivers/net/slhc.ko
 endif
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
 endef
