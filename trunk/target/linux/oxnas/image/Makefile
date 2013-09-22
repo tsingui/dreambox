@@ -13,8 +13,6 @@ JFFS2OPTS += --little-endian --pagesize=0x800 --no-cleanmarkers --pad
 UBIFS_OPTS += -m 2048 -e 126KiB -c 8192
 UBINIZE_OPTS += -m 2048 -p 128KiB -O 512
 
-#:mkfs.jffs2 -x lzo --root=/data/moko/build/tmp/rootfs --faketime --output=/data/moko/build/tmp/deploy/glibc/images/fic-gta01/OpenMoko-openmoko-devel-image-glibc-P1-August-Snapshot-20070829-fic-gta01.rootfs.jffs2 --little-endian --eraseblock=0x4000 --pad -n
-
 
 define Image/BuildKernel
 	$(TARGET_CROSS)objcopy -O binary -R .note -R .comment -S $(LINUX_DIR)/arch/arm/boot/compressed/vmlinux $(LINUX_DIR)/linux.bin
