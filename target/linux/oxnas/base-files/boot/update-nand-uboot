@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#
+# This script is use for upgrade or recovery nand bootloader.
+#  lintel<lintel.huang@gmail.com>
+#
+ERROR=1
+STAGE1=stage1.wrapped
+UBIFS=ubifs.img
+UBOOT=u-boot.wrapped
+KERNEL=uImage
+BS=512
+FLASH_ERASE=/usr/sbin/flash_eraseall
+
+if [ ! -x /usr/sbin/flash_eraseall ] && [ ! -x /sbin/nandbd_upgrade ]
+then
+    echo "FlashTools has problem!" 
+    exit ${ERROR}
+fi;
+
+if [ ! -e $STAGE1 ] && [ ! -e $UBOOT ]
+then
+    echo "Upgrade files not found!!" 
+    exit ${ERROR}
+else
+    /usr/sbin/flash_eraseall /dev/mtd1
+    /sbin/nandbd_upgrade -s stage1.wrapped -u u-boot.wrapped /dev/mtd1
+fi;
+
+if [ -e $KERNEL ]
+then
+    /sbin/nandbd_upgrade -k $KERNEL /dev/mtd1
+fi;
+
