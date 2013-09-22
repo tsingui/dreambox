@@ -1,0 +1,56 @@
+diff --git a/arch/arm/include/asm/hardirq.h b/arch/arm/include/asm/hardirq.h
+index 436e60b..2740c2a 100644
+--- a/arch/arm/include/asm/hardirq.h
++++ b/arch/arm/include/asm/hardirq.h
+@@ -5,7 +5,7 @@
+ #include <linux/threads.h>
+ #include <asm/irq.h>
+ 
+-#define NR_IPI	5
++#define NR_IPI	6
+ 
+ typedef struct {
+ 	unsigned int __softirq_pending;
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index cdeb727..7418e13 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -56,6 +56,7 @@ enum ipi_msg_type {
+ 	IPI_CALL_FUNC,
+ 	IPI_CALL_FUNC_SINGLE,
+ 	IPI_CPU_STOP,
++	IPI_WAKEUP_CPU,
+ };
+ 
+ int __cpuinit __cpu_up(unsigned int cpu)
+@@ -393,6 +394,7 @@ static const char *ipi_types[NR_IPI] = {
+ 	S(IPI_CALL_FUNC, "Function call interrupts"),
+ 	S(IPI_CALL_FUNC_SINGLE, "Single function call interrupts"),
+ 	S(IPI_CPU_STOP, "CPU stop interrupts"),
++	S(IPI_WAKEUP_CPU, "CPU wakeup interrupts"),
+ };
+ 
+ void show_ipi_list(struct seq_file *p, int prec)
+@@ -558,6 +560,9 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
+ 		ipi_cpu_stop(cpu);
+ 		irq_exit();
+ 		break;
++	case IPI_WAKEUP_CPU:
++		pr_info("CPU%u got wake up!\n", cpu);
++		break;
+ 
+ 	default:
+ 		printk(KERN_CRIT "CPU%u: Unknown IPI message 0x%x\n",
+diff --git a/arch/arm/plat-versatile/platsmp.c b/arch/arm/plat-versatile/platsmp.c
+index 49c7db4..7188034 100644
+--- a/arch/arm/plat-versatile/platsmp.c
++++ b/arch/arm/plat-versatile/platsmp.c
+@@ -85,7 +85,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
+ 	 * the boot monitor to read the system wide flags register,
+ 	 * and branch to the address found there.
+ 	 */
+-	gic_raise_softirq(cpumask_of(cpu), 1);
++	gic_raise_softirq(cpumask_of(cpu), 7 /* IPI_WAKEUP_CPU */);
+ 
+ 	timeout = jiffies + (1 * HZ);
+ 	while (time_before(jiffies, timeout)) {
