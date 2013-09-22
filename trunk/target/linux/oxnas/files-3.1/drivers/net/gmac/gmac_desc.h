@@ -47,62 +47,6 @@ typedef enum rdes0 {
 
 #define RX_DESC_STATUS_FL_NUM_BITS 14
 
-#if defined(CONFIG_ARCH_OXNAS)
-typedef enum rdes1 {
-    RDES1_DIC_BIT  = 31,
-    RDES1_RER_BIT  = 25,
-    RDES1_RCH_BIT  = 24,
-    RDES1_RBS2_BIT = 11,
-    RDES1_RBS1_BIT = 0,
-} rdes1_t;
-
-#define RX_DESC_LENGTH_RBS2_NUM_BITS 11
-#define RX_DESC_LENGTH_RBS1_NUM_BITS 11
-
-typedef enum tdes0 {
-    TDES0_OWN_BIT = 31,
-    TDES0_IHE_BIT = 16,
-    TDES0_ES_BIT  = 15,
-    TDES0_JT_BIT  = 14,
-    TDES0_FF_BIT  = 13,
-    TDES0_IPE_BIT = 12,
-    TDES0_LOC_BIT = 11,
-    TDES0_NC_BIT  = 10,
-    TDES0_LC_BIT  = 9,
-    TDES0_EC_BIT  = 8,
-    TDES0_VF_BIT  = 7,
-    TDES0_CC_BIT  = 3,
-    TDES0_ED_BIT  = 2,
-    TDES0_UF_BIT  = 1,
-    TDES0_DB_BIT  = 0
-} tdes0_t;
-
-#define TDES0_CC_NUM_BITS 4
-
-typedef enum tdes1 {
-    TDES1_IC_BIT   = 31,
-    TDES1_LS_BIT   = 30,
-    TDES1_FS_BIT   = 29,
-    TDES1_CIC_BIT  = 27,
-    TDES1_DC_BIT   = 26,
-    TDES1_TER_BIT  = 25,
-    TDES1_TCH_BIT  = 24,
-    TDES1_DP_BIT   = 23,
-    TDES1_TBS2_BIT = 11,
-    TDES1_TBS1_BIT = 0
-} tdes1_t;
-
-#define TDES1_CIC_NUM_BITS  2
-#define TDES1_TBS2_NUM_BITS 11
-#define TDES1_TBS1_NUM_BITS 11
-
-#define TDES1_CIC_NONE    0
-#define TDES1_CIC_HDR     1
-#define TDES1_CIC_PAYLOAD 2
-#define TDES1_CIC_FULL    3
-
-#else // CONFIG_ARCH_OXNAS
-
 typedef enum rdes1 {
     RDES1_DIC_BIT  = 31,
     RDES1_RBS2_BIT = 16,
@@ -155,7 +99,6 @@ typedef enum tdes1 {
 
 #define TDES1_TBS2_NUM_BITS 13
 #define TDES1_TBS1_NUM_BITS 13
-#endif // CONFIG_ARCH_OXNAS
 
 // Rx and Tx descriptors have the same max size for their associated buffers
 #define MAX_DESCRIPTOR_SHIFT	(RX_DESC_LENGTH_RBS1_NUM_BITS)
@@ -387,6 +330,7 @@ static inline u32 getandclear_rx_descriptor_arg(gmac_priv_t *priv)
 static inline int get_rx_descriptor(
     gmac_priv_t    *priv,
     int            *last,
+    int            *first,
     u32            *status,
     rx_frag_info_t *frag_info)
 {
@@ -432,7 +376,8 @@ static inline int get_rx_descriptor(
 	frag_info->arg = shadow->status;
 
 	// Is this descriptor the last contributing to a packet
-	*last = desc_status & (1UL << RDES0_LS_BIT);
+	*last = !!(desc_status & (1UL << RDES0_LS_BIT));
+	*first = !!(desc_status & (1UL << RDES0_FS_BIT));
 
 	// Accumulate the status
 	if (status && !*status) {
@@ -441,4 +386,6 @@ static inline int get_rx_descriptor(
 
     return index;
 }
+
+extern void print_rx_descriptor(gmac_priv_t *priv, int index);
 #endif  //  #if !defined(__GMAC_DESC_H__)
