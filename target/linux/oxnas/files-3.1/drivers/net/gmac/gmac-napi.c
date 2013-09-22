@@ -4981,7 +4981,7 @@ void post_phy_reset_action(struct net_device *dev)
     case PHY_TYPE_REALTEK_RTL8211D:
 //     case PHY_TYPE_REALTEK_RTL8211E:
         // If we don't have this the Realtek RTL8211D/E can fail
-       .. wait_autoneg_complete(priv);
+       //wait_autoneg_complete(priv);
         break;
     }
 }
