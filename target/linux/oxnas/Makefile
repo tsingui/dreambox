@@ -16,7 +16,7 @@ MAINTAINER:=lintel<lintel.huang@gmail.com>
 LINUX_VERSION:=3.1.10
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-fs-ext4 kmod-fs-vfat kmod-nls-cp437 kmod-nls-utf8  kmod-nls-iso8859-1 \
+DEFAULT_PACKAGES += hostapd kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-fs-ext4 kmod-fs-vfat kmod-nls-cp437 kmod-nls-utf8  kmod-nls-iso8859-1 \
 uboot-envtools mtd-utils mtd-utils-flash-erase mtd-utils-flash-eraseall mtd-utils-nanddump mtd-utils-nandwrite  mtd-utils-ubiattach  \
 mtd-utils-ubidetach mtd-utils-ubiformat mtd-utils-ubimkvol mtd-utils-ubimkvol
 
