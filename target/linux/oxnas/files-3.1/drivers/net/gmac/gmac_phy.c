@@ -74,16 +74,30 @@ static inline int phy_read_via_mac_unit(
 
 
 	spin_lock_irqsave(&phy_access_spinlock[priv->unit], mask);
-    unit_mac_reg_write(unit, MAC_GMII_ADR_REG, addr);
 
+	// Wait for GB bit to be low before writing GMII adr and data regs
     end = jiffies + MS_TO_JIFFIES(PHY_TRANSFER_TIMEOUT_MS);
-    while (time_before(jiffies, end)) {
-        if (!(unit_mac_reg_read(unit, MAC_GMII_ADR_REG) & (1UL << MAC_GMII_ADR_GB_BIT))) {
-            // Successfully read from PHY
-            data = unit_mac_reg_read(unit, MAC_GMII_DATA_REG) & 0xFFFF;
-            break;
-        }
+    while (unit_mac_reg_read(unit, MAC_GMII_ADR_REG) & (1UL << MAC_GMII_ADR_GB_BIT)) {
+    	if (time_after(jiffies, end)) {
+    		printk(KERN_ERR "phy_read_via_mac_unit() Timed out of initial wait for GB bit low\n");
+    		break;
+    	}
     }
+
+    // Write the GMII address register, with GB low
+    unit_mac_reg_write(unit, MAC_GMII_ADR_REG, addr);
+    wmb();
+    
+    end = jiffies + MS_TO_JIFFIES(PHY_TRANSFER_TIMEOUT_MS);
+    while (unit_mac_reg_read(unit, MAC_GMII_ADR_REG) & (1UL << MAC_GMII_ADR_GB_BIT)) {
+    	if (time_after(jiffies, end)) {
+    		printk(KERN_ERR "phy_read_via_mac_unit() Timed out of wait for read to complete\n");
+    		break;
+    	}
+    }
+    // Read the data read back from the PHY
+	data = unit_mac_reg_read(unit, MAC_GMII_DATA_REG) & 0xFFFF;
+	
 	spin_unlock_irqrestore(&phy_access_spinlock[priv->unit], mask);
 
     return data;

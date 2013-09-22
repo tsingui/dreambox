@@ -83,19 +83,11 @@ void init_tx_desc_list(
 		volatile gmac_dma_desc_t *desc   = base_ptr + i;
 
 		// Initialise the shadow descriptor
-#if defined(CONFIG_ARCH_OXNAS)
-		shadow->length = (1UL << TDES1_IC_BIT);
-		if (i == (num_descriptors - 1)) {
-			shadow->length |= (1UL << TDES1_TER_BIT);
-		}
-		shadow->status = 0;
-#else // CONFIG_ARCH_OXNAS
 		shadow->status = (1UL << TDES0_IC_BIT);
 		if (i == (num_descriptors - 1)) {
 			shadow->status |= (1UL << TDES0_TER_BIT);
 		}
 		shadow->length = 0;
-#endif // CONFIG_ARCH_OXNAS
 		shadow->buffer1 = 0;
 		shadow->buffer2 = 0;
 
@@ -179,6 +171,25 @@ int set_rx_descriptor(
     return index;
 }
 
+void print_rx_descriptor(
+	gmac_priv_t *priv,
+	int          index)
+{
+	volatile gmac_dma_desc_t *desc;
+	gmac_dma_desc_t          *shadow;
+
+	desc   = priv->rx_gmac_desc_list_info.base_ptr   + index;
+	shadow = priv->rx_gmac_desc_list_info.shadow_ptr + index;
+
+	rmb();
+
+	printk("Descriptor %d: status 0x%08x, length 0x%08x, buf1 0x%08x, buf2 0x%08x\n",
+		index, desc->status, desc->length, desc->buffer1, desc->buffer2);
+
+	printk("Shadow     %d: status 0x%08x, length 0x%08x, buf1 0x%08x, buf2 0x%08x\n",
+		index, shadow->status, shadow->length, shadow->buffer1, shadow->buffer2);
+}
+
 static inline int num_descriptors_needed(u16 length)
 {
 	int count = length >> MAX_DESCRIPTOR_SHIFT;
@@ -249,23 +260,6 @@ int set_tx_descriptor(
 				// Remember descriptor pointer for final passing of ownership to GMAC
 				descriptors[desc_index++] = descriptor;
 
-#if defined(CONFIG_ARCH_OXNAS)
-				// May have a second chained descriptor, but never a second buffer,
-				// so clear the flag indicating whether there is a chained descriptor
-				length &= ~(1UL << TDES1_TCH_BIT);
-
-				// Clear the first/last descriptor flags
-				length &= ~((1UL << TDES1_LS_BIT) | (1UL << TDES1_FS_BIT));
-
-				// Set the Tx checksum mode
-				length &= ~(((1UL << TDES1_CIC_NUM_BITS) - 1) << TDES1_CIC_BIT);
-				if (use_hw_csum) {
-					// Don't want full mode as network stack will have already
-					// computed the TCP/UCP pseudo header and placed in into the
-					// TCP/UCP checksum field
-					length |= (TDES1_CIC_PAYLOAD << TDES1_CIC_BIT);
-				}
-#else // CONFIG_ARCH_OXNAS
 				// May have a second chained descriptor, but never a second buffer,
 				// so clear the flag indicating whether there is a chained descriptor
 				status &= ~(1UL << TDES0_TCH_BIT);
@@ -281,7 +275,6 @@ int set_tx_descriptor(
 					// TCP/UCP checksum field
 					status |= (TDES0_CIC_PAYLOAD << TDES0_CIC_BIT);
 				}
-#endif // CONFIG_ARCH_OXNAS
 
 				// Set fragment buffer length
 				length &= ~(((1UL << TDES1_TBS1_NUM_BITS) - 1) << TDES1_TBS1_BIT);
@@ -292,11 +285,7 @@ int set_tx_descriptor(
 
 				if (previous_shadow) {
 					// Make the previous descriptor chain to the current one
-#if defined(CONFIG_ARCH_OXNAS)
-					previous_shadow->length |= (1UL << TDES1_TCH_BIT);
-#else // CONFIG_ARCH_OXNAS
 					previous_shadow->status |= (1UL << TDES0_TCH_BIT);
-#endif // CONFIG_ARCH_OXNAS
 					previous_descriptor->status = previous_shadow->status;
 					previous_descriptor->length = previous_shadow->length;
 
@@ -314,11 +303,7 @@ int set_tx_descriptor(
 					first_descriptor_index = index;
 
 					// Set flag indicating is first descriptor for packet
-#if defined(CONFIG_ARCH_OXNAS)
-					length |= (1UL << TDES1_FS_BIT);
-#else // CONFIG_ARCH_OXNAS
 					status |= (1UL << TDES0_FS_BIT);
-#endif // CONFIG_ARCH_OXNAS
 				}
 
 				// Is this the last descriptor for the packet?
@@ -330,11 +315,7 @@ int set_tx_descriptor(
 					buffer2 = (u32)skb;
 
 					// Set flag indicating is last descriptor for packet
-#if defined(CONFIG_ARCH_OXNAS)
-					length |= (1UL << TDES1_LS_BIT);
-#else // CONFIG_ARCH_OXNAS
 					status |= (1UL << TDES0_LS_BIT);
-#endif // CONFIG_ARCH_OXNAS
 				} else {
 					// For descriptor chaining need to remember previous descriptor
 					previous_descriptor = descriptor;
@@ -363,11 +344,7 @@ int set_tx_descriptor(
 				shadow->buffer2 = buffer2;
 
 				// Update the index of the next descriptor available for writing by the CPU
-#if defined(CONFIG_ARCH_OXNAS)
-				priv->tx_gmac_desc_list_info.w_index = (length & (1UL << TDES1_TER_BIT)) ? 0 : index + 1;
-#else // CONFIG_ARCH_OXNAS
 				priv->tx_gmac_desc_list_info.w_index = (status & (1UL << TDES0_TER_BIT)) ? 0 : index + 1;
-#endif // CONFIG_ARCH_OXNAS
 			} while (++part < parts);
 		} while (++frag_index < frag_count);
 
@@ -423,11 +400,7 @@ int get_tx_descriptor(
         buffer2 = shadow->buffer2;
 
         // Check that chained buffer not is use before setting skb from buffer2
-#if defined(CONFIG_ARCH_OXNAS)
-        if (!(length & (1UL << TDES1_TCH_BIT))) {
-#else // CONFIG_ARCH_OXNAS
         if (!(local_status & (1UL << TDES0_TCH_BIT))) {
-#endif // CONFIG_ARCH_OXNAS
             *skb = (struct sk_buff*)buffer2;
 			*buffer_owned = 1;
         } else {
@@ -442,11 +415,7 @@ int get_tx_descriptor(
         }
 
         // Update the index of the next descriptor with which the GMAC DMA may have finished
-#if defined(CONFIG_ARCH_OXNAS)
-        priv->tx_gmac_desc_list_info.r_index = (length & (1UL << TDES1_TER_BIT)) ? 0 : index + 1;
-#else // CONFIG_ARCH_OXNAS
         priv->tx_gmac_desc_list_info.r_index = (local_status & (1UL << TDES0_TER_BIT)) ? 0 : index + 1;
-#endif // CONFIG_ARCH_OXNAS
 
         // Account for the descriptor which is now no longer waiting to be processed by the CPU
         ++priv->tx_gmac_desc_list_info.empty_count;

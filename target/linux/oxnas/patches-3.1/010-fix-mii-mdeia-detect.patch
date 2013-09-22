@@ -1,0 +1,50 @@
+--- a/include/linux/mii.h	2012-01-18 23:33:18.000000000 +0800
++++ b/include/linux/mii.h	2013-06-07 18:24:01.000000000 +0800
+@@ -164,6 +164,9 @@
+ 	unsigned int full_duplex : 1;	/* is full duplex? */
+ 	unsigned int force_media : 1;	/* is autoneg. disabled? */
+ 	unsigned int supports_gmii : 1; /* are GMII registers supported? */
++	unsigned int using_1000 : 1;    /* the PHY is using 1000Mb rate */
++	unsigned int using_100 : 1;     /* the PHY is using 100Mb rate */
++	unsigned int using_pause : 1;	/* the PHY will generate pause frames */
+ 
+ 	struct net_device *dev;
+ 	int (*mdio_read) (struct net_device *dev, int phy_id, int location);
+@@ -183,6 +186,13 @@
+                       	     struct mii_ioctl_data *mii_data, int cmd,
+ 			     unsigned int *duplex_changed);
+ 
++extern unsigned int mii_check_media_ex(struct mii_if_info *mii,
++                                    unsigned int ok_to_print,
++                                    unsigned int init_media,
++                                    int *has_speed_changed,
++									 int *has_pause_changed,
++									 void (*link_state_change_callback)(int link_state, void* arg),
++									 void *link_state_change_arg);
+ 
+ static inline struct mii_ioctl_data *if_mii(struct ifreq *rq)
+ {
+@@ -257,6 +267,23 @@
+ 	return adv;
+ }
+ 
++static inline unsigned int mii_nway_result_1000(unsigned int lpa_1000, unsigned int advertised_1000)
++{
++	int full_negotiated = (lpa_1000 & LPA_1000FULL) &&
++						  (advertised_1000 & ADVERTISE_1000FULL);
++
++	int half_negotiated = (lpa_1000 & LPA_1000HALF) &&
++						  (advertised_1000 & ADVERTISE_1000HALF);
++	
++	if (full_negotiated) {
++		return LPA_1000FULL;
++	} else if (half_negotiated) {
++		return LPA_1000HALF;
++	} else {
++		return 0;
++	}
++}
++
+ /**
+  * mii_resolve_flowctrl_fdx
+  * @lcladv: value of MII ADVERTISE register
