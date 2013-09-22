@@ -104,13 +104,19 @@ static struct mtd_partition partition_info[] =
 		.size	= 0x40000	 
 	},
 	{
-		.name = "kernel", /* 0x000000200000-0x000000400000  blocks:32 size:0x400000 */
-		.offset = 0x000000440000,
+		.name = "kernel", /* 0x000000200000-0x000000600000  blocks:32 size:0x400000 */
+		.offset = 0x000000200000,
 		.size = 0x400000	/* 4 MB */
 	},
 	{
-		.name = "rootfs",  /* 0x00000400000-0x000008000000  blocks:992 size:0x7C00000 */
-		.offset = 0x400000,
+		.name = "rootfs",  /* 0x00000600000-0x000008000000  blocks:992 size:0x7C00000 */
+		.offset = 0x600000,
+		.size = 0
+	}
+,
+	{
+		.name = "firmware",  /* 0x00000200000-0x000008000000 */
+		.offset = 0x200000,
 		.size = 0
 	}
 };
