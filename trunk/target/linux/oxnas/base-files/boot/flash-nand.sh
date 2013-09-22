@@ -23,12 +23,30 @@ then
     echo "Upgrade files not found!!" 
     exit ${ERROR}
 else
-    /usr/sbin/flash_eraseall /dev/mtd1
-    /sbin/nandbd_upgrade -s stage1.wrapped -u u-boot.wrapped /dev/mtd1
+    /usr/sbin/flash_eraseall /dev/mtd0
+    /sbin/nandbd_upgrade -s stage1.wrapped -u u-boot.wrapped /dev/mtd0
 fi;
 
 if [ -e $KERNEL ]
 then
-    /sbin/nandbd_upgrade -k $KERNEL /dev/mtd1
+    /sbin/nandbd_upgrade -k $KERNEL /dev/mtd0
 fi;
 
+if [ -e $UBIFS ]
+then
+
+mtd erase rootfs
+
+ubidetach -p /dev/mtd2
+sleep 1
+ubiformat /dev/mtd2 -y -f $UBIFS
+sleep 1
+ubiattach /dev/ubi_ctrl -m 2
+sleep 1
+mount -t ubifs ubi0:rootfs /mnt
+chown -R root /mnt/*
+sleep 1
+ubidetach -p /dev/mtd2
+fi;
+
+echo "OpenWrt Upgrade Done."
