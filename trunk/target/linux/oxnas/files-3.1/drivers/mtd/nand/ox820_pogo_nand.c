@@ -64,53 +64,33 @@ static struct mtd_partition partition_info[] =
                 .size	= 0xE00000 // first 112 128k blocks used for stage1. u-boot and kernel
         },
 	{
-		.name	= "stage1", /* 0x000000000000-0x000000020000 blocks:1 size:0x20000 */
+		.name	= "stage1", /* 0x000000000000-0x000000040000 blocks:1 size:0x20000 */
 		.offset	= 0,
-		.size	= 0x20000		/* 1 blocks; 1 stage1 */
+		.size	= 0x40000		/* 2 blocks; 2 stage1 */
 	},
 	{
-		.name	= "stage1-backup", /* 0x000000020000-0x000000040000 blocks:2 size:0x40000 */
-		.offset	= 0x20000,
-		.size 	= 0x20000		/* 1 blocks; 1 stage1 */
-	},
-	{
-		.name	= "u-boot", /* 0x000000040000-0x0000000a0000 blocks:3 size:0x60000 */
+		.name	= "u-boot", /* 0x000000040000-0x0000001a0000 blocks:3 size:0x160000 */
 		.offset = 0x40000,
-		.size	= 0x60000	 
+		.size	= 0x160000	 
 	},
 	{
-		.name	= "u-boot-env", /* 0x0000000a0000-0x000000c00000 blocks:1 size:0x20000 */
-		.offset = 0xa0000,
-		.size	= 0x20000		/* 1 blocks */
+		.name	= "u-boot-env", /* 0x0000001a0000-0x000000c00000 blocks:2 size:0x40000 */
+		.offset = 0x1a0000,
+		.size	= 0x40000		/* 2 blocks */
 	},
 	{
-		.name	= "factory", /* 0x0000000c0000-0x000001000000  blocks:2 size:0x40000 */
-		.offset	= 0xc0000,
-		.size	= 0x40000	 
+		.name	= "factory", /* 0x00000001e0000-0x000002000000  blocks:1 size:0x20000 */
+		.offset	= 0x1e0000,
+		.size	= 0x20000	 
 	},
 	{
-		.name	= "u-boot-backup", /*0x000000100000-0x000001600000 blocks:3 size:0x60000 */
-		.offset = 0x100000,
-		.size	= 0x60000	 
+		.name = "kernel", /* 0x000000200000-0x000000800000  blocks:32 size:0x400000 */
+		.offset = 0x200000,
+		.size = 0x800000	/* 4 MB */ 
 	},
 	{
-		.name	= "u-boot-env-backup", /* 0x000000160000-0x000001800000 blocks:1 size:0x20000 */
-		.offset = 0x160000,
-		.size	= 0x20000		/* 1 blocks */
-	},
-	{
-		.name	= "factory-backup", /* 0x000000180000-0x000001c00000  blocks:2 size:0x40000 */
-		.offset	= 0x180000,
-		.size	= 0x40000	 
-	},
-	{
-		.name = "kernel", /* 0x000000200000-0x000000600000  blocks:32 size:0x400000 */
-		.offset = 0x000000200000,
-		.size = 0x400000	/* 4 MB */
-	},
-	{
-		.name = "rootfs",  /* 0x00000600000-0x000008000000  blocks:992 size:0x7C00000 */
-		.offset = 0x600000,
+		.name = "rootfs",  /* 0x00000a00000-0x000008000000  blocks:992 size:0x7C00000 */
+		.offset = 0xa00000,
 		.size = 0
 	}
 ,
