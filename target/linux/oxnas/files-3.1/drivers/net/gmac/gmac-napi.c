@@ -606,24 +606,24 @@ static void configure_for_link_speed(gmac_priv_t *priv)
 	switch (link_speed) {
 		case 1000:
 			/* add by chorus to workaround traffic sometimes can not pass issue, printk is necessary to help delay */
-			printk("workaround step1\n");
+//			printk("workaround step1\n");
 			mac_reg_set_mask(priv, MAC_CONFIG_REG,
 				(1UL << MAC_CONFIG_PS_BIT));
-			printk("workaround step2\n");
+//			printk("workaround step2\n");
 			mac_reg_clear_mask(priv, MAC_CONFIG_REG,
 				(1UL << MAC_CONFIG_PS_BIT));
-			printk("workaround finish\n");
+//			printk("workaround finish\n");
 			/* workaround end */
 			break;
 		case 10:
 			/* add by chorus to workaround traffic sometimes can not pass issue, printk is necessary to help delay */
-			printk("workaround step1\n");
+//			printk("workaround step1\n");
 			mac_reg_clear_mask(priv, MAC_CONFIG_REG,
 				(1UL << MAC_CONFIG_PS_BIT));
-			printk("workaround step2\n");
+//			printk("workaround step2\n");
 			mac_reg_set_mask(priv, MAC_CONFIG_REG,
 				(1UL << MAC_CONFIG_PS_BIT));
-			printk("workaround finish\n");
+//			printk("workaround finish\n");
 			/* workaround end */
 			break;
 	}
@@ -4981,7 +4981,7 @@ void post_phy_reset_action(struct net_device *dev)
     case PHY_TYPE_REALTEK_RTL8211D:
 //     case PHY_TYPE_REALTEK_RTL8211E:
         // If we don't have this the Realtek RTL8211D/E can fail
-        wait_autoneg_complete(priv);
+       .. wait_autoneg_complete(priv);
         break;
     }
 }
