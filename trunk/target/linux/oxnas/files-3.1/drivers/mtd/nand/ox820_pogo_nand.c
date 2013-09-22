@@ -61,8 +61,13 @@ static struct mtd_partition partition_info[] =
         {
                 .name	= "boot",  /* 0x000000000000-0x000000e00000  blocks:112 siez:0xE00000*/
                 .offset	= 0,
-                .size	= 0xE00000 // first 112 128k blocks used for stage1. u-boot and kernel
+                .size	= 0x1000000 // first 112 128k blocks used for stage1. u-boot and kernel
         },
+	{
+		.name = "rootfs",  /* 0x00000a00000-0x000008000000  blocks:992 size:0x7C00000 */
+		.offset = 0xa00000,
+		.size = 0
+	},
 	{
 		.name	= "stage1", /* 0x000000000000-0x000000040000 blocks:1 size:0x20000 */
 		.offset	= 0,
@@ -88,12 +93,6 @@ static struct mtd_partition partition_info[] =
 		.offset = 0x200000,
 		.size = 0x800000	/* 4 MB */ 
 	},
-	{
-		.name = "rootfs",  /* 0x00000a00000-0x000008000000  blocks:992 size:0x7C00000 */
-		.offset = 0xa00000,
-		.size = 0
-	}
-,
 	{
 		.name = "firmware",  /* 0x00000200000-0x000008000000 */
 		.offset = 0x200000,
