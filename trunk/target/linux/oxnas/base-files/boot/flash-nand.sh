@@ -5,6 +5,7 @@
 #  lintel<lintel.huang@gmail.com>
 #
 ERROR=1
+NAND=/dev/mtd8
 STAGE1=stage1.wrapped
 UBIFS=ubifs.img
 UBOOT=u-boot.wrapped
@@ -23,13 +24,13 @@ then
     echo "Upgrade files not found!!" 
     exit ${ERROR}
 else
-    /usr/sbin/flash_eraseall /dev/mtd0
-    /sbin/nandbd_upgrade -s stage1.wrapped -u u-boot.wrapped /dev/mtd0
+    /usr/sbin/flash_eraseall $NAND
+    /sbin/nandbd_upgrade -s stage1.wrapped -u u-boot.wrapped $NAND
 fi;
 
 if [ -e $KERNEL ]
 then
-    /sbin/nandbd_upgrade -k $KERNEL /dev/mtd0
+    /sbin/nandbd_upgrade -k $KERNEL $NAND
 fi;
 
 if [ -e $UBIFS ]
