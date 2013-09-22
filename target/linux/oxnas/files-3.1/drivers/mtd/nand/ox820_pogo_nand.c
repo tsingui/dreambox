@@ -53,21 +53,6 @@ DECLARE_WAIT_QUEUE_HEAD(wq);
 
 static struct mtd_partition partition_info[] =
 {
-  	{
-                .name 	= "fullflash", /* 0x000000000000-0x000008000000 1024 blocks */
-                .offset	= 0,
-                .size	=  MTDPART_SIZ_FULL
-        },
-        {
-                .name	= "boot",  /* 0x000000000000-0x000000e00000  blocks:112 siez:0xE00000*/
-                .offset	= 0,
-                .size	= 0x1000000 // first 112 128k blocks used for stage1. u-boot and kernel
-        },
-	{
-		.name = "rootfs",  /* 0x00000a00000-0x000008000000  blocks:992 size:0x7C00000 */
-		.offset = 0xa00000,
-		.size = 0
-	},
 	{
 		.name	= "stage1", /* 0x000000000000-0x000000040000 blocks:1 size:0x20000 */
 		.offset	= 0,
@@ -83,6 +68,11 @@ static struct mtd_partition partition_info[] =
 		.offset = 0x1a0000,
 		.size	= 0x40000		/* 2 blocks */
 	},
+        {
+                .name	= "boot",  /* 0x000000000000-0x000000e00000  blocks:112 siez:0xE00000*/
+                .offset	= 0,
+                .size	= 0x2000000 // first 112 128k blocks used for stage1. u-boot and kernel
+        },
 	{
 		.name	= "factory", /* 0x00000001e0000-0x000002000000  blocks:1 size:0x20000 */
 		.offset	= 0x1e0000,
@@ -91,13 +81,23 @@ static struct mtd_partition partition_info[] =
 	{
 		.name = "kernel", /* 0x000000200000-0x000000800000  blocks:32 size:0x400000 */
 		.offset = 0x200000,
-		.size = 0x800000	/* 4 MB */ 
+		.size = 0xa00000	/* 10 MB */ 
+	},
+	{
+		.name = "rootfs",  /* 0x00000a00000-0x000008000000  blocks:992 size:0x7C00000 */
+		.offset = 0xe00000,
+		.size = 0
 	},
 	{
 		.name = "firmware",  /* 0x00000200000-0x000008000000 */
 		.offset = 0x200000,
 		.size = 0
-	}
+	},
+	{
+                .name 	= "fullflash", /* 0x000000000000-0x000008000000 1024 blocks */
+                .offset	= 0,
+                .size	=  MTDPART_SIZ_FULL
+        },
 };
 
 static struct priv {
