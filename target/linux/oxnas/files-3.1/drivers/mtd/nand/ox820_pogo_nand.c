@@ -19,6 +19,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
+#include <linux/platform_device.h>
 #include <asm/io.h>
 #include <mach/hardware.h>
 
@@ -50,24 +51,68 @@ extern spinlock_t oxnas_gpio_spinlock;
 
 DECLARE_WAIT_QUEUE_HEAD(wq);
 
-#define	NUM_PARTITIONS	3
 static struct mtd_partition partition_info[] =
 {
+  	{
+                .name 	= "fullflash", /* 0x000000000000-0x000008000000 1024 blocks */
+                .offset	= 0,
+                .size	=  MTDPART_SIZ_FULL
+        },
+        {
+                .name	= "boot",  /* 0x000000000000-0x000000e00000  blocks:112 siez:0xE00000*/
+                .offset	= 0,
+                .size	= 0xE00000 // first 112 128k blocks used for stage1. u-boot and kernel
+        },
 	{
-                .name = "NAND 128MiB 3,3V 8-bit",
-                .offset = 0,
-                .size =  MTDPART_SIZ_FULL// complete size, per the Cloud Engines appearance.
-        },
-        {
-                .name = "boot",
-                .offset = 0,
-                .size = 1024 * 128 * 112 // first 112 128k blocks used for stage1. u-boot and kernel
-        },
-        {
-                .name = "rootfs",
-                .offset = MTDPART_OFS_NXTBLK,
-                .size = MTDPART_SIZ_FULL // the rest of the NAND
-        }
+		.name	= "stage1", /* 0x000000000000-0x000000020000 blocks:1 size:0x20000 */
+		.offset	= 0,
+		.size	= 0x20000		/* 1 blocks; 1 stage1 */
+	},
+	{
+		.name	= "stage1-backup", /* 0x000000020000-0x000000040000 blocks:2 size:0x40000 */
+		.offset	= 0x20000,
+		.size 	= 0x20000		/* 1 blocks; 1 stage1 */
+	},
+	{
+		.name	= "u-boot", /* 0x000000040000-0x0000000a0000 blocks:3 size:0x60000 */
+		.offset = 0x40000,
+		.size	= 0x60000	 
+	},
+	{
+		.name	= "u-boot-env", /* 0x0000000a0000-0x000000c00000 blocks:1 size:0x20000 */
+		.offset = 0xa0000,
+		.size	= 0x20000		/* 1 blocks */
+	},
+	{
+		.name	= "factory", /* 0x0000000c0000-0x000001000000  blocks:2 size:0x40000 */
+		.offset	= 0xc0000,
+		.size	= 0x40000	 
+	},
+	{
+		.name	= "u-boot-backup", /*0x000000100000-0x000001600000 blocks:3 size:0x60000 */
+		.offset = 0x100000,
+		.size	= 0x60000	 
+	},
+	{
+		.name	= "u-boot-env-backup", /* 0x000000160000-0x000001800000 blocks:1 size:0x20000 */
+		.offset = 0x160000,
+		.size	= 0x20000		/* 1 blocks */
+	},
+	{
+		.name	= "factory-backup", /* 0x000000180000-0x000001c00000  blocks:2 size:0x40000 */
+		.offset	= 0x180000,
+		.size	= 0x40000	 
+	},
+	{
+		.name = "kernel", /* 0x000000200000-0x000000400000  blocks:32 size:0x400000 */
+		.offset = 0x000000440000,
+		.size = 0x400000	/* 4 MB */
+	},
+	{
+		.name = "rootfs",  /* 0x00000400000-0x000008000000  blocks:992 size:0x7C00000 */
+		.offset = 0x400000,
+		.size = 0
+	}
 };
 
 static struct priv {
@@ -174,7 +219,7 @@ static int ox820_nand_init(void)
 		goto error;
 	}
 
-	err = mtd_device_register(priv.mtd, partition_info, NUM_PARTITIONS);
+	err = mtd_device_register(priv.mtd, partition_info,ARRAY_SIZE(partition_info));
 	if (err) {
 		err = -ENFILE;
 		goto error;
