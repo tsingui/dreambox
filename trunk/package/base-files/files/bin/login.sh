@@ -5,8 +5,7 @@ if ( ! grep -qs '^root:[!x]\?:' /etc/shadow || \
      ! grep -qs '^root:[!x]\?:' /etc/passwd ) && \
    [ -z "$FAILSAFE" ]
 then
-	echo "Login failed."
-	exit 0
+    exec /bin/login
 else
 cat << EOF
  === IMPORTANT ============================
