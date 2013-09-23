@@ -412,7 +412,7 @@
     "boot=bootm 60500000\0" \
     "root_dev=ubi0:rootfs \0" \
     "root_nand=setenv bootargs root=ubi0:rootfs ubi.mtd=6,512 rootfstype=ubifs rootwait console=ttyS0,115200  mac_adr=0x00,0x30,0xe0,0x00,0x00,0x01 mem=128M poweroutage=yes\0" \
-    "root_sata=setenv bootargs root=/dev/sda2 ubi.mtd=6,512 rootwaitconsole=ttyS0,115200 mac_adr=0x00,0x30,0xe0,0x00,0x00,0x01 mem=128M poweroutage=yes\0" \
+    "root_sata=setenv bootargs root=/dev/sda2 ubi.mtd=6,512 rootwait console=ttyS0,115200 mac_adr=0x00,0x30,0xe0,0x00,0x00,0x01 mem=128M poweroutage=yes\0" \
     "fload1=fatload ide 0:1 0x60500000 /boot/uImage \0" \
     "fload2=ext2load ide 0:1 0x60500000 /boot/uImage \0" \
     "load_hdd=diskboot 0x60500000 0:1\0" \
