@@ -7,7 +7,7 @@
 ERROR=1
 NAND=/dev/mtd8
 STAGE1=stage1.wrapped
-UBIFS=ubifs.img
+UBIFS=rootfs.ubi
 UBOOT=u-boot.wrapped
 KERNEL=uImage
 BS=512
@@ -38,16 +38,16 @@ then
 
 mtd erase rootfs
 
-ubidetach -p /dev/mtd2
+ubidetach -p /dev/mtd6
 sleep 1
-ubiformat /dev/mtd2 -y -f $UBIFS
+ubiformat /dev/mtd6 -y -f $UBIFS
 sleep 1
-ubiattach /dev/ubi_ctrl -m 2
+ubiattach /dev/ubi_ctrl -m 6
 sleep 1
 mount -t ubifs ubi0:rootfs /mnt
 chown -R root /mnt/*
 sleep 1
-ubidetach -p /dev/mtd2
+ubidetach -p /dev/mtd6
 fi;
 
 echo "OpenWrt Upgrade Done."

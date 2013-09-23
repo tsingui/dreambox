@@ -63,11 +63,7 @@ set_state() {
 		status_led_set_timer 50 50
 		;;
 	done)
-		if [ "${status_led/power}" != "$status_led" ]; then
 			status_led_on
-		else
-			status_led_off
-		fi
 		;;
 	esac
 }
