@@ -9,24 +9,36 @@ NAND=/dev/mtd8
 STAGE1=stage1.wrapped
 UBIFS=rootfs.ubi
 UBOOT=u-boot.wrapped
+ENV=u-boot-env.bin
+
 KERNEL=uImage
 BS=512
 FLASH_ERASE=/usr/sbin/flash_eraseall
 
-if [ ! -x /usr/sbin/flash_eraseall ] && [ ! -x /sbin/nandbd_upgrade ]
+if [ ! -x /usr/sbin/flash_eraseall ] && [ ! -x /sbin/nandbd_upgrade ]  && [ ! -x /sbin/mtd ]
 then
     echo "FlashTools has problem!" 
     exit ${ERROR}
 fi;
 
+
 if [ ! -e $STAGE1 ] && [ ! -e $UBOOT ]
 then
-    echo "Upgrade files not found!!" 
+    echo "u-boot files not found!!" 
     exit ${ERROR}
 else
     /usr/sbin/flash_eraseall $NAND
     /sbin/nandbd_upgrade -s stage1.wrapped -u u-boot.wrapped $NAND
 fi;
+
+if [ ! -e $ENV ]
+then
+    echo "u-boot-env files not found!" 
+else
+    /sbin/mtd erase u-boot-env
+    /sbin/mtd write $ENV u-boot-env
+fi;
+
 
 if [ -e $KERNEL ]
 then
@@ -48,6 +60,7 @@ mount -t ubifs ubi0:rootfs /mnt
 chown -R root /mnt/*
 sleep 1
 umount /mnt
+sleep 1
 ubidetach -p /dev/mtd6
 fi;
 
