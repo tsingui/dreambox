@@ -47,6 +47,7 @@ sleep 1
 mount -t ubifs ubi0:rootfs /mnt
 chown -R root /mnt/*
 sleep 1
+umount /mnt
 ubidetach -p /dev/mtd6
 fi;
 
